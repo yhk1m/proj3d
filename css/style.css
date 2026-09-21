@@ -153,7 +153,8 @@ body.projector .sp-texnote { font-size: 16px; }
 }
 .stage.done { border-color: rgba(255,209,102,0.5); color: var(--text); }
 .stage.on { background: var(--accent); color: var(--ink); border-color: var(--accent); font-weight: 700; }
-.transport { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+/* 남는 폭은 진행바가 차지하고, 모자라면 단계 버튼 줄이 줄어들며 스크롤된다(재생 버튼·유틸은 항상 보임) */
+.transport { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: max-content; }
 .tbtn { background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; width: 36px; height: 32px; display: grid; place-items: center; color: var(--text); }
 .tbtn:hover { border-color: var(--accent); }
 .tbtn-play { background: var(--accent); color: var(--ink); border-color: var(--accent); }

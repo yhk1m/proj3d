@@ -75,6 +75,9 @@ export function mountStepper(container) {
       b.classList.toggle('on', i === idx);
       b.classList.toggle('done', i < idx || (i === idx && s.t >= 1 && s.stage !== 'flat'));
     });
+    // 단계 줄이 스크롤될 만큼 좁으면 현재 단계 버튼이 보이게
+    const active = stages.children[idx];
+    if (active && stages.scrollWidth > stages.clientWidth) active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     const v = Math.round(s.t * 1000);
     if (parseInt(scrub.value, 10) !== v) scrub.value = v;
     scrub.disabled = s.stage === 'flat';
