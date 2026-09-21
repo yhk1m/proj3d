@@ -65,6 +65,39 @@ export class Paper {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 1;
 
+    // 접촉부만 불투명하게 깊이를 기록한다. 반투명 지구가 나중에 그려져도
+    // 종이와 만나는 선을 덮지 않으며, 실제로 종이 밖으로 나온 부분은 유지한다.
+    // 위치는 별도로 만들지 않고 pipeline으로 계산한 종이 geometry를 공유한다.
+    this.contactMaterial = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      depthWrite: true,
+      polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+      uniforms: { contactStrength: { value: 0 } },
+      vertexShader: `
+        varying vec3 vPaperPosition;
+        void main() {
+          vPaperPosition = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float contactStrength;
+        varying vec3 vPaperPosition;
+        void main() {
+          float distanceToSphere = abs(length(vPaperPosition) - 1.0);
+          float width = max(0.0005, min(0.006, fwidth(distanceToSphere) * 0.8));
+          if (contactStrength <= 0.0 || distanceToSphere > width * contactStrength) discard;
+          // 따뜻한 황동색 접촉 표시. 발광 광선과 구분되는 불투명한 선.
+          gl_FragColor = vec4(0.72, 0.48, 0.16, 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }
+      `,
+    });
+    this.contact = new THREE.Mesh(this.geometry, this.contactMaterial);
+    this.contact.frustumCulled = false;
+    this.contact.renderOrder = 0.5;
+
     // 종이 가장자리 선 (+ 절개선)
     const nEdge = 2 * (nu + nv) + MAX_CUT_SEGMENTS;
     this.edgePos = new Float32Array(nEdge * 2 * 3);
@@ -77,7 +110,7 @@ export class Paper {
     this.edge.renderOrder = 2;
 
     this.group = new THREE.Group();
-    this.group.add(this.mesh, this.edge);
+    this.group.add(this.mesh, this.edge, this.contact);
     this._g = [0, 0];
     this._p = [0, 0, 0];
     this._translucent = false;
@@ -100,6 +133,13 @@ export class Paper {
   update(ctx) {
     // 빛 단계에서 종이 자체의 f와 B_t는 고정이다(s는 지도에만 적용). 재계산할 필요가 없다.
     const state = getState();
+    const attached = state.stage === 'project' ||
+      (state.stage === 'wrap' && state.t >= 0.25) || state.stage === 'unroll';
+    const planeFinish = ctx.surface?.type === 'plane' && state.stage === 'project'
+      ? 1 - THREE.MathUtils.smoothstep(state.t, 0.82, 0.85) : 1;
+    const strength = attached ? THREE.MathUtils.smoothstep(ctx.bendT, 0.96, 1) * planeFinish : 0;
+    this.contactMaterial.uniforms.contactStrength.value = strength;
+    this.contact.visible = strength > 0;
     const key = state.stage === 'project' ? JSON.stringify([state.projection, ctx.surface, ctx.params, ctx.domain, ctx.bendT]) : null;
     if (key !== null && this._shapeKey === key) return;
     this._shapeKey = key;
