@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { positionOf, makeGridParam } from '../geometry/pipeline.js';
 import { buildGridTopology, scatterTriangles, fixLobeSeams, cutEdgeLines } from '../geometry/mesh.js';
 import { getState } from '../state.js';
+import { contactGLSL, contactUniforms, updateContact } from './contact.js';
 
 export { buildGridTopology, scatterTriangles };
 
@@ -72,7 +73,7 @@ export class Paper {
       side: THREE.DoubleSide,
       depthWrite: true,
       polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
-      uniforms: { contactStrength: { value: 0 } },
+      uniforms: contactUniforms(),
       vertexShader: `
         varying vec3 vPaperPosition;
         void main() {
@@ -81,14 +82,15 @@ export class Paper {
         }
       `,
       fragmentShader: `
-        uniform float contactStrength;
+        ${contactGLSL}
         varying vec3 vPaperPosition;
         void main() {
-          float distanceToSphere = abs(length(vPaperPosition) - 1.0);
-          float width = max(0.0005, min(0.006, fwidth(distanceToSphere) * 0.8));
-          if (contactStrength <= 0.0 || distanceToSphere > width * contactStrength) discard;
-          // 따뜻한 황동색 접촉 표시. 발광 광선과 구분되는 불투명한 선.
-          gl_FragColor = vec4(0.72, 0.48, 0.16, 1.0);
+          float d = contactDistance(vPaperPosition);
+          if (contactEnabled < 0.5 || d > 0.014) discard;
+          float pixelWidth = max(fwidth(d), 0.0001);
+          float ink = 1.0 - smoothstep(pixelWidth * 0.2, pixelWidth * 0.8, d);
+          // 가림 폭과 선 폭을 분리: 흰 종이로 가리고 중심만 약 1px 표시.
+          gl_FragColor = vec4(mix(vec3(0.92), vec3(0.60, 0.40, 0.14), ink), 1.0);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
         }
@@ -133,13 +135,8 @@ export class Paper {
   update(ctx) {
     // 빛 단계에서 종이 자체의 f와 B_t는 고정이다(s는 지도에만 적용). 재계산할 필요가 없다.
     const state = getState();
-    const attached = state.stage === 'project' ||
-      (state.stage === 'wrap' && state.t >= 0.25) || state.stage === 'unroll';
-    const planeFinish = ctx.surface?.type === 'plane' && state.stage === 'project'
-      ? 1 - THREE.MathUtils.smoothstep(state.t, 0.82, 0.85) : 1;
-    const strength = attached ? THREE.MathUtils.smoothstep(ctx.bendT, 0.96, 1) * planeFinish : 0;
-    this.contactMaterial.uniforms.contactStrength.value = strength;
-    this.contact.visible = strength > 0;
+    updateContact(this.contactMaterial.uniforms);
+    this.contact.visible = this.contactMaterial.uniforms.contactEnabled.value > 0;
     const key = state.stage === 'project' ? JSON.stringify([state.projection, ctx.surface, ctx.params, ctx.domain, ctx.bendT]) : null;
     if (key !== null && this._shapeKey === key) return;
     this._shapeKey = key;
