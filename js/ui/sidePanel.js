@@ -4,7 +4,7 @@ import katex from 'katex';
 import { PROJECTIONS, FAMILY_LABELS, PROPERTY_LABELS } from '../projections/registry.js';
 import { ROBINSON_TABLE } from '../projections/robinsonTable.js';
 import { winkelEquirectComponent, stepProjection, endOfStep } from '../projections/derivations.js';
-import { aitoff } from '../projections/adjusted.js';
+import { aitoff, mollweide, goodeHomolosine, GOODE_LOBES_DEG, HOMOLOSINE_PHI } from '../projections/adjusted.js';
 import { getState, subscribe, frame, caption, entry, rootEntry, derivation, STAGE_LABELS } from '../state.js';
 
 const D = Math.PI / 180;
@@ -16,12 +16,108 @@ function el(tag, cls, text) {
   return e;
 }
 
+/** 수식이 패널 폭보다 길면 글자 크기를 줄여 가로 스크롤이 생기지 않게 한다 */
+function fitTex(container) {
+  const inner = container.querySelector('.katex-display > .katex') || container.querySelector('.katex');
+  if (!inner) return;
+  inner.style.fontSize = '';
+  const avail = container.clientWidth - 24;
+  const need = inner.scrollWidth;
+  if (avail > 0 && need > avail) inner.style.fontSize = `${Math.max(0.5, avail / need) * 1.21}em`;
+}
+
+let lastTexContainer = null;
 function renderTex(container, tex) {
   container.innerHTML = '';
   if (!tex) { container.style.display = 'none'; return; }
   container.style.display = '';
   try { katex.render(tex, container, { throwOnError: false, displayMode: true }); }
   catch (e) { container.textContent = tex; }
+  fitTex(container);
+  lastTexContainer = container;
+}
+window.addEventListener('resize', () => { if (lastTexContainer) fitTex(lastTexContainer); });
+
+// ---------------------------------------------------------------------------
+// lobes: 구드용. 위: 시뉴소이드·몰바이데의 위선 길이 비(40°44′ 에서 교차). 아래: 로브 배치와 중앙경선.
+// ---------------------------------------------------------------------------
+function drawLobes(canvas, fr) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const step = fr.stepInfo ? fr.stepInfo.index : 0;
+  ctx.font = '11px Pretendard, sans-serif';
+
+  // ---- 위: 위선 길이 비 그래프 ----
+  const gH = 118, pad = { l: 36, r: 10, t: 16, b: 20 };
+  const px = (deg) => pad.l + (deg / 90) * (W - pad.l - pad.r);
+  const py = (v) => pad.t + (1 - v) * (gH - pad.t - pad.b);
+  ctx.strokeStyle = 'rgba(169,182,204,0.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, gH - pad.b); ctx.lineTo(W - pad.r, gH - pad.b); ctx.stroke();
+  ctx.fillStyle = 'rgba(169,182,204,0.9)';
+  for (const d of [0, 30, 60, 90]) ctx.fillText(`${d}°`, px(d) - 7, gH - pad.b + 13);
+  ctx.fillText('1', pad.l - 12, py(1) + 4); ctx.fillText('0', pad.l - 12, py(0) + 4);
+  ctx.fillText('위선 길이 비 (적도 = 1)', pad.l + 4, pad.t - 4);
+  const curves = [
+    { name: '시뉴소이드', color: '#ffd166', f: (deg) => Math.cos(deg * D) },
+    { name: '몰바이데', color: '#e8553f', f: (deg) => mollweide(Math.PI, deg * D)[0] / Math.PI },
+  ];
+  for (const c of curves) {
+    ctx.strokeStyle = c.color; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let d = 0; d <= 90; d += 1) { const v = c.f(d); if (d === 0) ctx.moveTo(px(d), py(v)); else ctx.lineTo(px(d), py(v)); }
+    ctx.stroke();
+  }
+  const seamDeg = HOMOLOSINE_PHI / D;
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(232,237,245,0.8)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(px(seamDeg), pad.t); ctx.lineTo(px(seamDeg), gH - pad.b); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#e8edf5'; ctx.fillText("40°44′", px(seamDeg) + 4, gH - pad.b - 4);
+  // 범례
+  ctx.fillStyle = '#ffd166'; ctx.fillRect(W - pad.r - 128, pad.t + 2, 12, 3);
+  ctx.fillStyle = '#e8edf5'; ctx.fillText('시뉴소이드', W - pad.r - 112, pad.t + 7);
+  ctx.fillStyle = '#e8553f'; ctx.fillRect(W - pad.r - 58, pad.t + 2, 12, 3);
+  ctx.fillStyle = '#e8edf5'; ctx.fillText('몰바이데', W - pad.r - 42, pad.t + 7);
+
+  // ---- 아래: 로브 배치도 ----
+  const top = gH + 10, mapH = H - top - 4;
+  const sx = (W - 16) / (2 * Math.PI), sy = mapH / 3.0;
+  const mx = (x) => W / 2 + x * sx, my = (y) => top + mapH / 2 - y * sy;
+  const eps = 1e-6;
+  const drawLobe = (lobe, sign) => {
+    const [a, b] = lobe.range;
+    const pts = [];
+    for (let d = 0; d <= 90; d += 3) pts.push(goodeHomolosine((a + eps) * D, sign * d * D));
+    for (let d = 90; d >= 0; d -= 3) pts.push(goodeHomolosine((b - eps) * D, sign * d * D));
+    ctx.beginPath();
+    pts.forEach((p, i) => (i ? ctx.lineTo(mx(p[0]), my(p[1])) : ctx.moveTo(mx(p[0]), my(p[1]))));
+    ctx.closePath();
+    ctx.fillStyle = step >= 2 ? 'rgba(244,238,220,0.18)' : 'rgba(244,238,220,0.08)';
+    ctx.fill();
+    ctx.strokeStyle = step >= 2 ? 'rgba(244,238,220,0.9)' : 'rgba(244,238,220,0.35)';
+    ctx.lineWidth = 1; ctx.stroke();
+    // 중앙경선
+    ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(126,224,168,0.9)';
+    ctx.beginPath();
+    for (let d = 0; d <= 90; d += 3) { const p = goodeHomolosine(lobe.center * D, sign * d * D); if (d === 0) ctx.moveTo(mx(p[0]), my(p[1])); else ctx.lineTo(mx(p[0]), my(p[1])); }
+    ctx.stroke(); ctx.setLineDash([]);
+    // 40°44′ 이음매
+    if (step >= 1) {
+      ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(232,237,245,0.7)';
+      ctx.beginPath();
+      for (let d = a + 1; d <= b - 1; d += 3) { const p = goodeHomolosine(d * D, sign * HOMOLOSINE_PHI); if (d === a + 1) ctx.moveTo(mx(p[0]), my(p[1])); else ctx.lineTo(mx(p[0]), my(p[1])); }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    if (step >= 2) {
+      ctx.fillStyle = '#7ee0a8';
+      const c = lobe.center;
+      ctx.fillText(`${Math.abs(c)}°${c < 0 ? 'W' : 'E'}`, mx(c * D) - 12, my(sign * 0.55) + 4);
+    }
+  };
+  GOODE_LOBES_DEG.north.forEach((l) => drawLobe(l, 1));
+  GOODE_LOBES_DEG.south.forEach((l) => drawLobe(l, -1));
+  ctx.fillStyle = 'rgba(169,182,204,0.9)';
+  ctx.fillText(step >= 2 ? '로브 6개와 중앙경선(점선) — 절개는 바다에서만' : step === 1 ? '점선 = 40°44′ 이음매' : '아래: 완성된 구드 도법의 로브 배치', 8, top + 12);
 }
 
 // ---------------------------------------------------------------------------
@@ -128,7 +224,12 @@ export function mountSidePanel(container) {
   const tex = el('div', 'sp-tex');
   const panel = el('div', 'sp-panel');
   const readout = el('div', 'sp-readout');
-  root.append(head, stageTitle, cap, badge, tex, panel, readout);
+  const copy = el('div', 'sp-copy');
+  copy.append('(c) 2026 양정고등학교 지리교사 김용현T | ');
+  const link = el('a', null, 'https://bgnl.kr');
+  link.href = 'https://bgnl.kr'; link.target = '_blank'; link.rel = 'noopener';
+  copy.appendChild(link);
+  root.append(head, stageTitle, cap, badge, tex, panel, readout, copy);
   container.appendChild(root);
 
   // 패널 요소들
@@ -154,6 +255,7 @@ export function mountSidePanel(container) {
   drawMini(miniA, aitoff, '#ffd166');
   drawMini(miniB, winkelEquirectComponent, '#7ee0a8');
   const areaRatio = el('div', 'sp-area');
+  const lobes = el('canvas', 'sp-graph sp-lobes'); lobes.width = 300; lobes.height = 300;
 
   let currentPanel = null;
   function showPanel(name, node) {
@@ -204,6 +306,7 @@ export function mountSidePanel(container) {
       blendW.textContent = `가중치 — 아이토프 ${(1 - w).toFixed(2)} : 등장방형 ${w.toFixed(2)}`;
     }
     else if (p === 'areaRatio') { showPanel('areaRatio', areaRatio); if (api.onAreaRatioNeeded) api.onAreaRatioNeeded(); }
+    else if (p === 'lobes') { showPanel('lobes', lobes); drawLobes(lobes, fr); }
     else showPanel('none', null);
   }
   subscribe(render);

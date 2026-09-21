@@ -4,7 +4,7 @@
 // 격자 메시의 프래그먼트 셰이더는 (λ', φ') 를 역회전(toGeo = Mᵀ)해 지리좌표로 육지 마스크를 샘플링한다.
 import * as THREE from 'three';
 import { positionOf, makeGridParam } from '../geometry/pipeline.js';
-import { buildGridTopology, scatterTriangles } from './paper.js';
+import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../geometry/mesh.js';
 
 export const INK = new THREE.Color(0x1b2a4a);
 export const RAY = new THREE.Color(0xffd166);
@@ -150,6 +150,7 @@ export class LandGrid {
     const n = this.topo.count;
     this.gridPos = new Float32Array(n * 3);
     this.gridGeo = new Float32Array(n * 3);
+    this.gridLatLon = new Float64Array(n * 2);
     this.gridArr = new Float32Array(n);
     const tn = this.topo.tris.length;
     this.triPos = new Float32Array(tn * 3);
@@ -164,19 +165,27 @@ export class LandGrid {
     const param = makeGridParam(ctx.domain);
     this._ensureGrid(param.kind);
     const { uv, tris, count } = this.topo;
-    const gp = this.gridPos, gg = this.gridGeo, ga = this.gridArr, g = this._g, p = this._p, n = this._n;
+    const gp = this.gridPos, gg = this.gridGeo, gl = this.gridLatLon, ga = this.gridArr, g = this._g, p = this._p, n = this._n;
     for (let k = 0; k < count; k++) {
       param.toGeo(uv[2 * k], uv[2 * k + 1], g);
       const sv = positionOf(ctx, g[0], g[1], p, n);
       gp[3 * k] = p[0] + n[0] * LIFT_GRID; gp[3 * k + 1] = p[1] + n[1] * LIFT_GRID; gp[3 * k + 2] = p[2] + n[2] * LIFT_GRID;
       const cp = Math.cos(g[1]);
       gg[3 * k] = cp * Math.sin(g[0]); gg[3 * k + 1] = Math.sin(g[1]); gg[3 * k + 2] = cp * Math.cos(g[0]);
+      gl[2 * k] = g[0]; gl[2 * k + 1] = g[1];
       ga[k] = sv;
     }
     scatterTriangles(gp, tris, this.triPos, [
       { src: gg, dst: this.triGeo, n: 3 },
       { src: ga, dst: this.triArr, n: 1 },
     ]);
+    const cuts = ctx.domain.cuts || null;
+    if (cuts) {
+      fixLobeSeams(gl, tris, this.triPos, cuts, (l, ph, out) => {
+        positionOf(ctx, l, ph, out, n);
+        out[0] += n[0] * LIFT_GRID; out[1] += n[1] * LIFT_GRID; out[2] += n[2] * LIFT_GRID;
+      });
+    }
     this.geometry.attributes.position.needsUpdate = true;
     this.geometry.attributes.geo.needsUpdate = true;
     this.geometry.attributes.arrive.needsUpdate = true;

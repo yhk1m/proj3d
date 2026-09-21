@@ -12,7 +12,10 @@ import { bend, coneGeometry } from '../js/geometry/bend.js';
 import { makeRotation, aspectSpec, ASPECT_PRESETS, unitVector } from '../js/geometry/rotate.js';
 import { inDomain, paperPosition } from '../js/geometry/pipeline.js';
 import { lightPosition } from '../js/projections/perspective.js';
-import { coastlines, splitLines, hasSeamCrossing, countryRings, projectedArea, AFRICA_FILTER, GREENLAND_FILTER } from '../js/geometry/clip.js';
+import { coastlines, splitLines, splitAtCuts, hasSeamCrossing, countryRings, projectedArea, AFRICA_FILTER, GREENLAND_FILTER } from '../js/geometry/clip.js';
+import { GOODE_CUTS, goodeLobeIndex, goodeHomolosine, homolosine } from '../js/projections/adjusted.js';
+import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../js/geometry/mesh.js';
+import { makeGridParam, positionOf } from '../js/geometry/pipeline.js';
 
 const D = Math.PI / 180;
 const HALF_PI = Math.PI / 2;
@@ -410,6 +413,83 @@ function testDerivations() {
 }
 
 // ---------------------------------------------------------------------------
+// 11. 구드 호몰로사인 (M6): d3 대응, 절개선 분할, 로브 경계를 걸치는 삼각형·선분 없음
+// ---------------------------------------------------------------------------
+function nearCut(lam, phi, margin = 3 * D) {
+  const list = phi >= 0 ? GOODE_CUTS.north : GOODE_CUTS.south;
+  return list.some((c) => Math.abs(lam - c) < margin) || Math.abs(Math.abs(lam) - Math.PI) < margin;
+}
+
+function testGoode(land) {
+  // d3 의 단열 호몰로사인 투영(scale 1, y 반전)과 비교. 절개선 위의 점은 로브 귀속 관례가 달라 제외.
+  const proj = d3p.geoInterruptedHomolosine().scale(1).translate([0, 0]);
+  let worst = 0, n = 0;
+  for (let lat = -85; lat <= 85; lat += 10) for (let lon = -175; lon <= 175; lon += 10) {
+    const l = lon * D, p = lat * D;
+    if (nearCut(l, p, 0.5 * D)) continue;
+    const a = goodeHomolosine(l, p), q = proj([lon, lat]);
+    worst = Math.max(worst, Math.hypot(a[0] - q[0], a[1] + q[1])); n++;
+  }
+  report('11. 구드 호몰로사인', `단열 forward vs d3.geoInterruptedHomolosine (${n}점)`, worst < 1e-6, `최대 오차 ${fmt(worst)}`);
+  // 비단열 vs d3 raw, 40°44′ 이음매 연속
+  let seam = 0;
+  for (let lon = -170; lon <= 170; lon += 10) {
+    const a = homolosine(lon * D, 0.7109889596207567 - 1e-7), b = homolosine(lon * D, 0.7109889596207567 + 1e-7);
+    seam = Math.max(seam, Math.hypot(a[0] - b[0], a[1] - b[1]));
+  }
+  report('11. 구드 호몰로사인', '비단열 호몰로사인의 40°44′ 이음매 연속 (x 불연속 없음)', seam < 1e-4, `최대 틈 ${fmt(seam)}`);
+  // 정적성 (절개선 근처 제외)
+  let worstS = 0, ns = 0;
+  for (let lat = -80; lat <= 80; lat += 10) for (let lon = -170; lon <= 170; lon += 10) {
+    const l = lon * D, p = lat * D;
+    if (nearCut(l, p) || Math.abs(Math.abs(p) - 0.7109889596207567) < 2 * D) continue;
+    const d = distortionAt(goodeHomolosine, l, p);
+    worstS = Math.max(worstS, Math.abs(d.s - 1)); ns++;
+  }
+  report('11. 구드 호몰로사인', `면적배율 = 1 ± 0.01 (절개선·이음매 근처 제외, ${ns}점)`, worstS < 0.01, `최대 |s−1| ${fmt(worstS)}`);
+  // 선 분할: 같은 반구의 두 끝점은 같은 로브
+  if (land) {
+    const lines = splitAtCuts(splitLines(coastlines(land), makeRotation(aspectSpec('normal', 'cylinder'))), GOODE_CUTS);
+    let bad = 0, segs = 0;
+    for (const line of lines) for (let i = 2; i < line.length; i += 2) {
+      const p0 = line[i - 1], p1 = line[i + 1];
+      if ((p0 >= 0) !== (p1 >= 0)) continue;
+      segs++;
+      if (goodeLobeIndex(line[i - 2], p0) !== goodeLobeIndex(line[i], p1)) bad++;
+    }
+    report('11. 구드 호몰로사인', `해안선 절개선 분할: 로브 경계를 걸치는 선분 없음 (${segs}개 선분)`, bad === 0, `걸침 ${bad}`);
+  }
+  // 격자 메시: 절개 모핑 t = 0.5, 1 에서 로브 경계를 걸치는 삼각형 없음
+  const deriv = DERIVATIONS.goodeFromParts;
+  const params = { phi0: 0 };
+  const topo = buildGridTopology(180, 90);
+  const gridPos = new Float32Array(topo.count * 3), gridLatLon = new Float64Array(topo.count * 2), tri = new Float32Array(topo.tris.length * 3);
+  for (const t of [0.5, 1]) {
+    const sp = stepProjection(deriv, 2, t, params);
+    const ctx = { f: sp.f, domain: sp.domain, surface: { type: 'cylinder' }, params, light: null, bendT: 0, s: 1, rayReach: 1 };
+    const param = makeGridParam(sp.domain);
+    const g = [0, 0], p = [0, 0, 0];
+    for (let k = 0; k < topo.count; k++) {
+      param.toGeo(topo.uv[2 * k], topo.uv[2 * k + 1], g);
+      positionOf(ctx, g[0], g[1], p);
+      gridPos[3 * k] = p[0]; gridPos[3 * k + 1] = p[1]; gridPos[3 * k + 2] = p[2];
+      gridLatLon[2 * k] = g[0]; gridLatLon[2 * k + 1] = g[1];
+    }
+    scatterTriangles(gridPos, topo.tris, tri);
+    const fixed = fixLobeSeams(gridLatLon, topo.tris, tri, sp.domain.cuts, (l, ph, out) => positionOf(ctx, l, ph, out));
+    let longest = 0;
+    for (let i = 0; i < tri.length; i += 9) {
+      for (const [a, b] of [[0, 3], [3, 6], [6, 0]]) {
+        const e = Math.hypot(tri[i + a] - tri[i + b], tri[i + a + 1] - tri[i + b + 1], tri[i + a + 2] - tri[i + b + 2]);
+        if (e > longest) longest = e;
+      }
+    }
+    // 로브를 걸치면 이웃 중앙경선 차이(≥ 40° = 0.7) 만큼 길어진다. 극 근처 몰바이데 삼각형은 정상적으로 0.12 정도.
+    report('11. 구드 호몰로사인', `격자 메시 t=${t}: 로브 경계를 걸치는 삼각형 없음 (보정 ${fixed}개, 최장 변 ${longest.toFixed(3)})`, fixed > 0 && longest < 0.3, '');
+  }
+}
+
+// ---------------------------------------------------------------------------
 export async function runAll({ loadJSON } = {}) {
   results.length = 0;
   testBendIsometry();
@@ -425,5 +505,6 @@ export async function runAll({ loadJSON } = {}) {
     try { land = await loadJSON('data/land-110m.json'); countries = await loadJSON('data/countries-110m.json'); } catch (e) { /* 아래에서 보고 */ }
   }
   testClipAndArea(land, countries);
+  testGoode(land);
   return results.slice();
 }

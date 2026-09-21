@@ -1,10 +1,11 @@
 // © 2026 김용현
 // projections/derivations.js — 수학적 조정 시나리오 (PLAN 6.3, 9장). 새 조정 과정은 여기에 시나리오를 추가하는 방식으로만 넣는다.
 //
-// 시나리오: { root, steps: [ { titleKo, captionKo, formulaTex, morph, panel, compare?, tissot?, domain? } ] }
+// 시나리오: { root, steps: [ { titleKo, captionKo, formulaTex, morph, panel, compare?, tissot?, badgeKo? } ] }
 // morph   : { type:'lerp', to } | { type:'equalAreaFamily', to } | { type:'custom', fn(λ,φ,t,prev,params), domain? } | null
-// panel   : 'spacingGraph' | 'robinsonTable' | 'blend' | 'areaRatio' | 'none'
+// panel   : 'spacingGraph' | 'robinsonTable' | 'blend' | 'lobes' | 'areaRatio' | 'none'
 // compare : 단계에 들어가면 비교 모드로 겹칠 도법 id
+// 자막은 명사형 어미로 쓴다(수업용).
 //
 // 단계 k 의 투영 함수는 stepProjection(deriv, k, t, params) 로 얻는다. 1~4 단계는 root 로 재생한다.
 import { PROJECTIONS, domainOf } from './registry.js';
@@ -21,7 +22,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '위선 간격을 정각 조건에 맞게 조정',
-        captionKo: '빛으로 투영하면 고위도가 끝없이 늘어난다(y = tan φ). 가로로 늘어난 비율(sec φ)만큼만 세로를 늘리면 모양(각)이 보존된다. 티소 지표가 타원에서 원으로 바뀌는 것을 보라.',
+        captionKo: '빛 투영은 고위도가 끝없이 늘어남(y = tan φ). 가로로 늘어난 비율(sec φ)만큼만 세로를 늘리면 모양(각)이 보존됨. 티소 지표가 타원 → 원으로 바뀌는 것이 그 증거.',
         formulaTex: 'y = \\tan\\varphi \\;\\longrightarrow\\; y = \\ln\\tan\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right)',
         morph: { type: 'lerp', to: 'mercator' },
         panel: 'spacingGraph',
@@ -33,7 +34,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '위선 간격을 균등하게 조정',
-        captionKo: '벌어진 위선 간격을 모두 같게 되돌린다. 경선을 따라 거리가 정확해지지만(정거), 고위도의 가로 늘어남은 그대로 남는다.',
+        captionKo: '벌어진 위선 간격을 모두 같게 되돌림. 경선 방향 거리는 정확해지지만(정거), 고위도의 가로 늘어남은 그대로.',
         formulaTex: 'y = \\tan\\varphi \\;\\longrightarrow\\; y = \\varphi',
         morph: { type: 'lerp', to: 'equirectangular' },
         panel: 'spacingGraph',
@@ -45,14 +46,14 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '① 메르카토르로 조정',
-        captionKo: '먼저 정각 조건에 맞춰 메르카토르 도법을 만든다. 극은 무한대로 가서 그릴 수 없다.',
+        captionKo: '먼저 정각 조건으로 메르카토르를 만듦. 극은 무한대 — 그릴 수 없음.',
         formulaTex: 'y = \\ln\\tan\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right)',
         morph: { type: 'lerp', to: 'mercator' },
         panel: 'spacingGraph',
       },
       {
-        titleKo: '② 위도를 0.8배로 줄여 투영한 뒤 1.25배 늘림',
-        captionKo: '메르카토르 식의 φ 자리에 0.8φ 를 넣고 결과를 1.25배 한다. 극(φ = 90°)도 유한한 y 에 놓이지만 정각성은 잃는다.',
+        titleKo: '② 위도를 0.8배로 줄여 투영한 뒤 1.25배로 늘림',
+        captionKo: '메르카토르 식의 φ 자리에 0.8φ 를 넣고 결과를 1.25배. 극(φ = 90°)도 유한한 y 에 놓이지만 정각성은 잃음.',
         formulaTex: 'y = 1.25\\,\\ln\\tan\\left(\\tfrac{\\pi}{4}+0.4\\varphi\\right)',
         morph: { type: 'lerp', to: 'miller' },
         panel: 'spacingGraph',
@@ -66,7 +67,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '위선 간격을 균등하게 조정',
-        captionKo: '중심 빛이 만든 위선 간격(tan)을 표준위선에서의 거리에 비례하도록 되돌린다. 경선을 따라 거리가 정확해진다.',
+        captionKo: '중심 빛이 만든 위선 간격(tan)을 표준위선에서의 거리에 비례하도록 되돌림. 경선 방향 거리가 정확해짐.',
         formulaTex: '\\rho = \\cot\\varphi_0 - \\tan(\\varphi-\\varphi_0) \\;\\longrightarrow\\; \\rho = \\cot\\varphi_0 - (\\varphi-\\varphi_0)',
         morph: { type: 'lerp', to: 'equidistantConic' },
         panel: 'spacingGraph',
@@ -78,7 +79,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '위선 간격을 정각 조건에 맞게 조정',
-        captionKo: '두 표준위선(30°, 60°)에서 축척이 1이 되도록 원뿔상수 n 과 반지름 ρ(φ) 를 정한다. 메르카토르와 같은 원리로 세로 간격을 가로 늘어남에 맞춘다.',
+        captionKo: '두 표준위선(30°, 60°)에서 축척이 1이 되도록 원뿔상수 n 과 반지름 ρ(φ) 를 정함. 메르카토르와 같은 원리 — 세로 간격을 가로 늘어남에 맞춤.',
         formulaTex: '\\begin{gathered}\\rho = F\\cot^{n}\\!\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right)\\\\[2pt] n = \\frac{\\ln(\\cos\\varphi_1/\\cos\\varphi_2)}{\\ln\\!\\left(\\tan(\\tfrac{\\pi}{4}+\\tfrac{\\varphi_2}{2})\\big/\\tan(\\tfrac{\\pi}{4}+\\tfrac{\\varphi_1}{2})\\right)}\\end{gathered}',
         morph: { type: 'lerp', to: 'lambertConformalConic' },
         panel: 'spacingGraph',
@@ -90,7 +91,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '위선 간격을 정적 조건에 맞게 조정',
-        captionKo: '위선 사이의 고리 면적이 실제 구면의 띠 면적과 같아지도록 ρ(φ) 를 정한다. 고위도로 갈수록 위선 간격이 좁아진다.',
+        captionKo: '위선 사이 고리의 넓이가 실제 구면의 띠 넓이와 같아지도록 ρ(φ) 를 정함. 고위도로 갈수록 위선 간격이 좁아짐.',
         formulaTex: '\\rho = \\tfrac{\\sqrt{C-2n\\sin\\varphi}}{n},\\quad n = \\tfrac{\\sin\\varphi_1+\\sin\\varphi_2}{2}',
         morph: { type: 'lerp', to: 'albers' },
         panel: 'spacingGraph',
@@ -104,7 +105,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '반지름을 각거리에 비례하게 조정',
-        captionKo: '평사도법의 반지름 2tan(c/2) 를 각거리 c 자체로 바꾼다. 접점에서 어느 방향으로든 거리가 정확해지고, 대척점까지 온 세계가 원 안에 들어온다.',
+        captionKo: '평사도법의 반지름 2tan(c/2) 를 각거리 c 그대로로 바꿈. 접점에서 어느 방향으로든 거리가 정확해지고, 대척점까지 온 세계가 원 안에 들어옴.',
         formulaTex: 'r = 2\\tan\\tfrac{c}{2} \\;\\longrightarrow\\; r = c',
         morph: { type: 'lerp', to: 'azimuthalEquidistant' },
         panel: 'spacingGraph',
@@ -116,7 +117,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '반지름을 정적 조건에 맞게 조정',
-        captionKo: '반지름 r 안의 원 넓이 πr² 이 각거리 c 안의 구면 모자 넓이 2π(1−cos c) 와 같도록 r = 2sin(c/2) 로 바꾼다.',
+        captionKo: '반지름 r 안의 원 넓이 πr² = 각거리 c 안의 구면 모자 넓이 2π(1 − cos c) 가 되도록 r = 2sin(c/2).',
         formulaTex: 'r = 2\\tan\\tfrac{c}{2} \\;\\longrightarrow\\; r = 2\\sin\\tfrac{c}{2}',
         morph: { type: 'lerp', to: 'lambertAzimuthalEA' },
         panel: 'spacingGraph',
@@ -130,7 +131,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '① 눌린 고위도를 세로로 다시 벌림 (정적성 유지)',
-        captionKo: '면적은 정확하지만 고위도가 납작하게 눌려 있다. 눌린 고위도를 세로로 다시 벌린다. 면적을 지키려면 세로로 늘린 만큼 가로를 줄여야 한다: x = λ·cos φ / Y′(φ). 모핑 내내 티소 타원의 넓이는 변하지 않는다.',
+        captionKo: '면적은 정확하지만 고위도가 납작한 상태. 고위도를 세로로 벌리되, 면적을 지키려면 세로로 늘린 만큼 가로를 줄여야 함: x = λ·cos φ / Y′(φ). 모핑 내내 티소 타원의 넓이는 그대로.',
         formulaTex: 'y = Y(\\varphi),\\qquad x = \\lambda\\,\\frac{\\cos\\varphi}{Y\'(\\varphi)}',
         morph: { type: 'equalAreaFamily', to: 'equalEarth' },
         panel: 'spacingGraph',
@@ -138,7 +139,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '② 로빈슨 도법과 외형 비교',
-        captionKo: '로빈슨 도법처럼 친숙한 외형을 목표로 다항식 계수 4개(A₁~A₄)를 정했다. 로빈슨과 달리 면적이 정확하다.',
+        captionKo: '로빈슨처럼 친숙한 외형을 목표로 다항식 계수 4개(A₁~A₄)를 정함. 빨간 선 = 로빈슨. 외형은 비슷하지만 이쪽은 면적이 정확.',
         formulaTex: 'A_1 = 1.340264,\\; A_2 = -0.081106,\\; A_3 = 0.000893,\\; A_4 = 0.003796',
         morph: null,
         panel: 'none',
@@ -146,7 +147,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '③ 그린란드 : 아프리카 면적비',
-        captionKo: '실제 면적비는 약 1 : 14. 메르카토르·로빈슨·Equal Earth 에서 지도상 면적비가 어떻게 달라지는지 비교한다.',
+        captionKo: '실제 면적비 약 1 : 14. 메르카토르·로빈슨·Equal Earth 에서 지도상 면적비가 어떻게 달라지는지 비교.',
         formulaTex: null,
         morph: null,
         panel: 'areaRatio',
@@ -161,14 +162,14 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '① 등장방형으로 조정',
-        captionKo: '먼저 위선 간격을 균등하게 되돌린다(등장방형). 로빈슨 도법은 여기서 출발한다.',
+        captionKo: '먼저 위선 간격을 균등하게 되돌림(등장방형). 로빈슨의 출발점.',
         formulaTex: 'y = \\tan\\varphi \\;\\longrightarrow\\; y = \\varphi',
         morph: { type: 'lerp', to: 'equirectangular' },
         panel: 'spacingGraph',
       },
       {
         titleKo: '② Y 표 적용 — 위선의 세로 위치',
-        captionKo: '각 위선을 표의 Y(φ) 값(적도로부터 거리 비)에 따라 옮긴다. 40° 까지는 거의 등간격이고, 고위도에서 간격이 좁아진다.',
+        captionKo: '각 위선을 표의 Y(φ) 값(적도로부터 거리 비)에 따라 옮김. 40° 까지는 거의 등간격, 고위도에서 간격이 좁아짐.',
         formulaTex: 'y = 1.3523\\,Y(\\varphi)',
         morph: {
           type: 'custom',
@@ -181,7 +182,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '③ X 표 적용 — 위선의 길이',
-        captionKo: '각 위선을 표의 X(φ) 비율로 줄인다. 극은 점이 아니라 적도 길이의 0.5322배인 선이 된다.',
+        captionKo: '각 위선을 표의 X(φ) 비율로 줄임. 극은 점이 아니라 적도 길이의 0.5322배인 선.',
         formulaTex: 'x = 0.8487\\,X(\\varphi)\\,\\lambda',
         morph: {
           type: 'custom',
@@ -194,7 +195,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '④ 수식이 없는 도법',
-        captionKo: '로빈슨 도법에는 수식이 없다. "보기 좋은" 세계지도를 목표로 시행착오를 거쳐 정한 표가 정의다. 그래서 정각도 정적도 아닌 절충 도법이다. 티소 지표로 확인해 보라.',
+        captionKo: '로빈슨 도법에는 수식이 없음. "보기 좋은" 세계지도를 목표로 시행착오 끝에 정한 표가 곧 정의. 그래서 정각도 정적도 아닌 절충 도법 — 티소 지표로 확인.',
         formulaTex: null,
         morph: null,
         panel: 'robinsonTable',
@@ -202,7 +203,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '⑤ 연혁',
-        captionKo: '1963년 아서 로빈슨이 랜드 맥널리의 의뢰로 고안했다. 1988~1998년 내셔널 지오그래픽 협회 세계지도에 쓰였고, 1998년부터는 빈켈 트리펠 도법으로 교체되었다.',
+        captionKo: '1963년 아서 로빈슨이 랜드 맥널리의 의뢰로 고안. 1988~1998년 내셔널 지오그래픽 협회 세계지도에 사용, 1998년부터는 빈켈 트리펠로 교체.',
         formulaTex: null,
         morph: null,
         panel: 'none',
@@ -216,7 +217,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '위선 간격을 등간격으로 되돌림 (정적성 유지)',
-        captionKo: '위선 간격을 등간격(y = φ)으로 되돌리면, 면적을 지키기 위해 각 위선은 실제 길이(cos φ)로 줄어든다. 경선이 사인 곡선이 된다.',
+        captionKo: '위선 간격을 등간격(y = φ)으로 되돌리면, 면적을 지키기 위해 각 위선은 실제 길이(cos φ)로 줄어듦. 경선이 사인 곡선이 되는 이유.',
         formulaTex: 'y = \\varphi,\\qquad x = \\lambda\\,\\frac{\\cos\\varphi}{Y\'(\\varphi)} = \\lambda\\cos\\varphi',
         morph: { type: 'equalAreaFamily', to: 'sinusoidal' },
         panel: 'spacingGraph',
@@ -229,8 +230,8 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '전체 외곽을 2:1 타원에 맞춤 (정적성 유지)',
-        captionKo: '보조각 θ 를 2θ + sin 2θ = π sin φ 로 정하면(뉴턴법) 위선 y = √2 sin θ, 외곽이 2:1 타원이 되면서 면적이 보존된다.',
-        formulaTex: '2\\theta+\\sin 2\\theta = \\pi\\sin\\varphi,\\quad y = \\sqrt2\\sin\\theta,\\quad x = \\tfrac{2\\sqrt2}{\\pi}\\lambda\\cos\\theta',
+        captionKo: '보조각 θ 를 2θ + sin 2θ = π sin φ 로 정하면(뉴턴법) 위선 y = √2 sin θ, 외곽은 2:1 타원, 면적은 보존.',
+        formulaTex: '\\begin{gathered}2\\theta+\\sin 2\\theta = \\pi\\sin\\varphi\\\\[2pt] y = \\sqrt2\\sin\\theta,\\quad x = \\tfrac{2\\sqrt2}{\\pi}\\lambda\\cos\\theta\\end{gathered}',
         morph: { type: 'equalAreaFamily', to: 'mollweide' },
         panel: 'spacingGraph',
         badgeKo: '면적배율 1.00 유지',
@@ -242,8 +243,8 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '극을 선으로 표현 (정적성 유지)',
-        captionKo: '극을 적도 절반 길이의 선으로 두고, 외곽을 반원 두 개와 직선으로 만든 정적도법. 세로 간격 함수 Y(φ)만 바꾸면 가로 축척은 자동으로 정해진다.',
-        formulaTex: 'y = 2\\sqrt{\\tfrac{\\pi}{4+\\pi}}\\sin\\theta,\\quad x = \\tfrac{2}{\\sqrt{\\pi(4+\\pi)}}\\lambda(1+\\cos\\theta)',
+        captionKo: '극을 적도 절반 길이의 선으로 두고 외곽을 반원 두 개와 직선으로 만든 정적도법. 세로 간격 함수 Y(φ)만 정하면 가로 축척은 자동.',
+        formulaTex: '\\begin{gathered}y = 2\\sqrt{\\tfrac{\\pi}{4+\\pi}}\\sin\\theta\\\\[2pt] x = \\tfrac{2}{\\sqrt{\\pi(4+\\pi)}}\\lambda(1+\\cos\\theta)\\end{gathered}',
         morph: { type: 'equalAreaFamily', to: 'eckert4' },
         panel: 'spacingGraph',
         badgeKo: '면적배율 1.00 유지',
@@ -257,14 +258,14 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '① 정거방위도법(적도 중심)으로 조정',
-        captionKo: '적도 위 한 점을 중심으로 한 평사도법에서 출발해, 반지름을 각거리 c 에 비례하게 바꾼다(정거방위도법). 대척점까지 온 세계가 원 안에 들어온다.',
+        captionKo: '적도 위 한 점을 중심으로 한 평사도법에서 출발, 반지름을 각거리 c 에 비례하게 바꿈(정거방위도법). 대척점까지 온 세계가 원 안에.',
         formulaTex: 'r = 2\\tan\\tfrac{c}{2} \\;\\longrightarrow\\; r = c',
         morph: { type: 'lerp', to: 'azimuthalEquidistant' },
         panel: 'spacingGraph',
       },
       {
         titleKo: '② 경도를 절반으로 압축',
-        captionKo: '경도를 절반으로 압축해 전 세계를 반구 크기의 원 안에 넣는다.',
+        captionKo: '경도를 절반으로 압축해 전 세계를 반구 크기의 원 안에 넣음.',
         formulaTex: '(x, y) = \\mathrm{AE}\\!\\left(\\tfrac{\\lambda}{2},\\ \\varphi\\right)',
         morph: {
           type: 'custom',
@@ -275,7 +276,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '③ 가로를 2배로 늘림 = 아이토프 도법',
-        captionKo: '가로를 2배로 늘려 2:1 타원으로 만든다. 이것이 아이토프 도법이다.',
+        captionKo: '가로를 2배로 늘려 2:1 타원으로. 이것이 아이토프 도법.',
         formulaTex: '(x, y) = \\left(2\\,x_{\\mathrm{AE}}(\\tfrac{\\lambda}{2},\\varphi),\\ y_{\\mathrm{AE}}(\\tfrac{\\lambda}{2},\\varphi)\\right)',
         morph: {
           type: 'custom',
@@ -289,10 +290,50 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '④ 등장방형과 산술평균',
-        captionKo: '등장방형(표준위선 φ₁ = arccos(2/π) ≈ 50°28′)과 아이토프를 나란히 놓고, 두 좌표의 산술평균으로 합친다. "트리펠"은 면적·각·거리 세 가지 왜곡을 모두 조금씩 줄였다는 뜻이다.',
+        captionKo: '등장방형(표준위선 φ₁ = arccos(2/π) ≈ 50°28′)과 아이토프를 나란히 놓고 두 좌표의 산술평균. "트리펠" = 면적·각·거리 세 왜곡을 모두 조금씩 줄였다는 뜻.',
         formulaTex: '(x, y) = \\tfrac12\\left[\\,\\text{Aitoff}(\\lambda,\\varphi) + (\\lambda\\cos\\varphi_1,\\ \\varphi)\\,\\right]',
         morph: { type: 'lerp', to: 'winkelTripel' },
         panel: 'blend',
+      },
+    ],
+  },
+
+  // ---- 9.7 구드 호몰로사인 ----
+  goodeFromParts: {
+    root: 'lambertCylindricalEA',
+    steps: [
+      {
+        titleKo: '① 시뉴소이드와 몰바이데 — 둘 다 정적, 장점이 다름',
+        captionKo: '시뉴소이드(노란 지도)는 저위도 모양이 자연스럽고, 몰바이데(빨간 선)는 고위도 모양이 자연스러움. 둘 다 정적도법. 두 외곽선이 만나는 위도 = 위선 길이가 같아지는 40°44′.',
+        formulaTex: '\\text{Sinusoidal: } x = \\lambda\\cos\\varphi \\qquad \\text{Mollweide: } x = \\tfrac{2\\sqrt2}{\\pi}\\lambda\\cos\\theta',
+        morph: { type: 'equalAreaFamily', to: 'sinusoidal' },
+        panel: 'lobes',
+        compare: 'mollweide',
+        badgeKo: '면적배율 1.00 유지',
+      },
+      {
+        titleKo: '② 40°44′ 에서 자르고 접합 = 호몰로사인',
+        captionKo: '저위도(|φ| ≤ 40°44′)는 시뉴소이드, 고위도는 몰바이데를 0.0528 만큼 내려 붙임. 두 도법의 위선 길이가 같은 위도라 이음매가 벌어지지 않고, 정적성도 그대로.',
+        formulaTex: '|\\varphi| \\le 40°44\': \\text{Sinusoidal},\\qquad |\\varphi| > 40°44\': \\text{Mollweide} - 0.0528',
+        morph: { type: 'lerp', to: 'homolosine' },
+        panel: 'lobes',
+        badgeKo: '면적배율 1.00 유지',
+      },
+      {
+        titleKo: '③ 대양을 따라 찢기 = 단열',
+        captionKo: '대륙이 잘리지 않도록 대서양·태평양·인도양에서 절개. 북반구 2개, 남반구 4개 로브가 각자 중앙경선을 기준으로 다시 그려져 모양 왜곡이 크게 줄고, 면적은 그대로. 적도에서는 모든 로브가 이어짐.',
+        formulaTex: 'x = \\lambda_0 + x(\\lambda-\\lambda_0,\\ \\varphi),\\qquad \\lambda_0 = \\text{로브 중앙경선}',
+        morph: {
+          type: 'custom',
+          fn: (lam, phi, t) => {
+            const u = A.homolosine(lam, phi), i = A.goodeHomolosine(lam, phi);
+            return [u[0] + (i[0] - u[0]) * t, u[1] + (i[1] - u[1]) * t];
+          },
+          domain: { ...RECT_WORLD, cuts: A.GOODE_CUTS },
+        },
+        panel: 'lobes',
+        tissot: true,
+        badgeKo: '면적배율 1.00 유지',
       },
     ],
   },
@@ -302,7 +343,7 @@ export const DERIVATIONS = {
 // 모핑 평가
 // ---------------------------------------------------------------------------
 
-/** 도메인 보간. kind 가 다르면 t > 0 부터 목표 kind 를 쓴다. */
+/** 도메인 보간. kind 가 다르면 t > 0 부터 목표 kind 를 쓴다. 절개선(cuts)은 목표 것을 따른다. */
 export function lerpDomain(a, b, t) {
   if (t <= 0) return a;
   if (t >= 1) return b;
@@ -314,6 +355,7 @@ export function lerpDomain(a, b, t) {
     phiMax: a.phiMax + (b.phiMax - a.phiMax) * t,
     maxAngularDist: mad,
     kind: b.kind,
+    cuts: b.cuts || null,
   };
 }
 

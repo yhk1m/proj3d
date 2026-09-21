@@ -25,6 +25,50 @@ function slider({ label, min, max, step, value, format, onInput }) {
   return wrap;
 }
 
+const ICON_INFO = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.6" fill="currentColor"/></svg>';
+
+const TISSOT_INFO_HTML = `
+  <h3>티소 지표 (Tissot's indicatrix)</h3>
+  <p>지구 위에 같은 크기의 작은 원(각반경 4°)을 30° 간격으로 그린 뒤, 지도에서 어떻게 변형되는지 보는 도구. 원 하나가 그 지점의 왜곡을 그대로 보여줌.</p>
+  <ul>
+    <li><b>원이 그대로 원</b> → 모양(각) 보존 = 정각도법 (메르카토르, 평사, 람베르트 정각원추)</li>
+    <li><b>타원이지만 넓이가 모두 같음</b> → 면적 보존 = 정적도법 (Equal Earth, 몰바이데, 알베르스)</li>
+    <li><b>길쭉할수록</b> 각 왜곡이 큼, <b>클수록</b> 면적 과장이 큼 (메르카토르의 고위도)</li>
+    <li>정각이면서 정적인 평면 지도는 불가능 — 모든 도법은 무엇을 포기할지 고른 결과</li>
+  </ul>
+  <p class="pop-sub">원 위에 마우스를 올리면 나오는 값</p>
+  <dl>
+    <dt>h</dt><dd>경선 방향 축척</dd>
+    <dt>k</dt><dd>위선 방향 축척</dd>
+    <dt>s</dt><dd>면적배율 — 1.00 이면 실제와 같은 넓이</dd>
+    <dt>ω</dt><dd>최대각왜곡 — 0° 이면 정각</dd>
+  </dl>`;
+
+let popover = null;
+function togglePopover(anchor) {
+  if (!popover) {
+    popover = el('div', 'popover');
+    popover.innerHTML = TISSOT_INFO_HTML;
+    popover.style.display = 'none';
+    const close = el('button', 'popover-close', '닫기');
+    close.type = 'button';
+    close.addEventListener('click', () => { popover.style.display = 'none'; });
+    popover.appendChild(close);
+    document.body.appendChild(popover);
+    document.addEventListener('pointerdown', (e) => {
+      if (popover.style.display === 'none') return;
+      if (popover.contains(e.target) || e.target.closest('.ibtn')) return;
+      popover.style.display = 'none';
+    });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') popover.style.display = 'none'; });
+  }
+  if (popover.style.display === 'block') { popover.style.display = 'none'; return; }
+  const r = anchor.getBoundingClientRect();
+  popover.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - 356))}px`;
+  popover.style.top = `${r.bottom + 8}px`;
+  popover.style.display = 'block';
+}
+
 function toggle({ label, checked, onChange, cls = '' }) {
   const wrap = el('label', 'ctl ctl-toggle ' + cls);
   const input = el('input'); input.type = 'checkbox'; input.checked = checked;
@@ -91,7 +135,16 @@ export function mountControls(container, { onFullscreen } = {}) {
     }
 
     // 티소 · 비교
-    box.appendChild(toggle({ label: '티소 지표', checked: s.tissot, onChange: (v) => setState({ tissot: v }) }));
+    const tisWrap = el('span', 'ctl ctl-tissot');
+    tisWrap.appendChild(toggle({ label: '티소 지표', checked: s.tissot, onChange: (v) => setState({ tissot: v }) }));
+    const info = el('button', 'ibtn');
+    info.type = 'button';
+    info.title = '티소 지표란?';
+    info.setAttribute('aria-label', '티소 지표 설명');
+    info.innerHTML = ICON_INFO;
+    info.addEventListener('click', (ev) => { ev.stopPropagation(); togglePopover(info); });
+    tisWrap.appendChild(info);
+    box.appendChild(tisWrap);
     const cmp = el('label', 'ctl');
     cmp.append(el('span', 'ctl-label', '비교'));
     const sel = el('select', 'compare-select');
@@ -107,8 +160,7 @@ export function mountControls(container, { onFullscreen } = {}) {
     cmp.appendChild(sel);
     box.appendChild(cmp);
 
-    // 재생 · 화면
-    box.appendChild(toggle({ label: '자동 재생', checked: s.autoplay, onChange: (v) => setState({ autoplay: v }) }));
+    // 화면 (자동 재생은 하단 재생 버튼 옆, stepper.js)
     box.appendChild(toggle({ label: '저사양', checked: s.lowPower, onChange: (v) => setState({ lowPower: v }), cls: 'ctl-minor' }));
     const proj = el('button', 'chip' + (s.projector ? ' on' : ''), '프로젝터');
     proj.type = 'button';

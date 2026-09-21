@@ -93,6 +93,39 @@ export function splitLines(lines, rotation) {
   return out;
 }
 
+/**
+ * 단열 도법의 절개 자오선에서 선을 나눈다(PLAN 10장 1번, 구드). cuts = { north:[λ…], south:[λ…] } 라디안.
+ * 나뉜 끝점은 ε 만큼 안쪽으로 밀어 두 조각이 서로 다른 로브로 확실히 평가되게 한다.
+ */
+export function splitAtCuts(lines, cuts, eps = 1e-6) {
+  if (!cuts) return lines;
+  const out = [];
+  for (const line of lines) {
+    let cur = [line[0], line[1]];
+    for (let i = 2; i < line.length; i += 2) {
+      const l0 = line[i - 2], p0 = line[i - 1], l1 = line[i], p1 = line[i + 1];
+      let best = null;
+      const consider = (c, north) => {
+        if (!((l0 < c && l1 > c) || (l0 > c && l1 < c))) return;
+        const s = (c - l0) / (l1 - l0);
+        const pc = p0 + (p1 - p0) * s;
+        if ((north && pc < 0) || (!north && pc >= 0)) return; // 그 반구의 절개선이 아니다
+        if (!best || s < best.s) best = { c, s, pc, dir: Math.sign(l1 - l0) };
+      };
+      if (p0 >= 0 || p1 >= 0) for (const c of cuts.north) consider(c, true);
+      if (p0 < 0 || p1 < 0) for (const c of cuts.south) consider(c, false);
+      if (best) {
+        cur.push(best.c - best.dir * eps, best.pc);
+        out.push(Float64Array.from(cur));
+        cur = [best.c + best.dir * eps, best.pc];
+      }
+      cur.push(l1, p1);
+    }
+    if (cur.length >= 4) out.push(Float64Array.from(cur));
+  }
+  return out;
+}
+
 /** 점 배열을 프레임 좌표로 회전 */
 export function rotatePoints(points, rotation) {
   return points.map(([l, p]) => rotation.forward(l, p, [0, 0]));

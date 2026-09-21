@@ -94,11 +94,19 @@ export function setAspect(aspect) {
 }
 
 // ---- 타임라인 ------------------------------------------------------------
-/** [ {stage:'flat'}, {stage:'wrap'}, {stage:'project'}, {stage:'unroll'}, {stage:'adjust', step:0}, … ] */
+/** [ {stage:'flat'}, {stage:'wrap'}, {stage:'project'}, {stage:'unroll'}, {stage:'adjust', step:0}, … ]
+ *  평면 종이는 이미 펼쳐져 있으므로 unroll 이 없다. */
 export function timeline() {
-  const tl = [{ stage: 'flat', step: 0 }, { stage: 'wrap', step: 0 }, { stage: 'project', step: 0 }, { stage: 'unroll', step: 0 }];
+  const tl = [{ stage: 'flat', step: 0 }, { stage: 'wrap', step: 0 }, { stage: 'project', step: 0 }];
+  if (surfaceType() !== 'plane') tl.push({ stage: 'unroll', step: 0 });
   for (let k = 0; k < stepCount(); k++) tl.push({ stage: 'adjust', step: k });
   return tl;
+}
+
+/** 단계 이름표. 평면은 '씌우기' 대신 '붙이기' */
+export function stageLabel(stage) {
+  if (stage === 'wrap' && surfaceType() === 'plane') return '붙이기';
+  return STAGE_LABELS[stage];
 }
 
 export function timelineIndex() {
@@ -228,21 +236,25 @@ export function frame() {
     surface: root.surface, light: root.light, params: state.params,
     stage: state.stage, t: state.t, moveP, bendT, s,
     f: proj.f, domain: proj.domain, stepInfo,
-    flatView: (state.stage === 'unroll' && state.t >= 1) || state.stage === 'adjust',
+    flatView: (state.stage === 'unroll' && state.t >= 1) || state.stage === 'adjust' ||
+      (root.surface.type === 'plane' && state.stage === 'project' && state.t >= 1),
     projectionActive: state.stage !== 'flat' && !(state.stage === 'wrap'),
   };
   frameCache = { key, value };
   return value;
 }
 
-/** 단계 자막(한글) */
+/** 단계 자막(한글, 명사형) */
 export function caption() {
   const e = entry(), root = rootEntry(e);
+  const plane = root.surface.type === 'plane';
   switch (state.stage) {
-    case 'flat': return `펼쳐진 종이가 지구본 옆에 놓여 있다. (${root.nameKo}의 ${surfaceLabel(root)} 종이)`;
-    case 'wrap': return `종이가 말리면서 지구본에 씌워진다. 종이는 늘어나지 않는다(가전면).`;
-    case 'project': return lightCaption(root);
-    case 'unroll': return `지도가 그려진 종이를 다시 펼친다. ${root.captionKo}`;
+    case 'flat': return `펼쳐진 종이가 지구본 옆에 놓인 상태 — ${root.nameKo}의 ${surfaceLabel(root)} 종이`;
+    case 'wrap': return plane
+      ? '원판 종이를 접점에 붙이는 중. 평면은 굽힐 필요가 없는 가전면'
+      : '종이가 말리면서 지구본에 씌워지는 중. 종이는 늘어나지 않음 — 펼 수 있는 면(가전면)만 이렇게 씌울 수 있음';
+    case 'project': return lightCaption(root) + (plane && state.t >= 1 ? ' 투영 끝, 종이는 이미 펼쳐진 상태' : '');
+    case 'unroll': return `지도가 그려진 종이를 다시 펼치는 중. ${root.captionKo}`;
     case 'adjust': {
       const st = frame().stepInfo;
       return st ? st.captionKo : e.captionKo;
@@ -256,15 +268,15 @@ function surfaceLabel(root) {
 }
 
 function lightCaption(root) {
-  if (root.light && root.light.type === 'axisOrthogonal') return '지축에서 수평으로 나가는 빛이 해안선과 경위선을 종이에 새긴다.';
+  if (root.light && root.light.type === 'axisOrthogonal') return '지축에서 수평으로 나가는 빛 → 해안선과 경위선이 종이에 새겨짐.';
   const d = state.params.d;
   if (root.surface.type === 'plane') {
-    if (d === Infinity) return '무한히 먼 곳에서 오는 평행광이 해안선과 경위선을 평면에 새긴다.';
-    if (d >= 0.999) return '접점의 대척점에서 나온 빛이 해안선과 경위선을 평면에 새긴다.';
-    if (d <= 0.001) return '지구 중심의 빛이 해안선과 경위선을 평면에 새긴다.';
-    return `축 위 d = ${d.toFixed(2)} 지점의 빛이 해안선과 경위선을 평면에 새긴다.`;
+    if (d === Infinity) return '무한히 먼 곳의 평행광 → 해안선과 경위선이 평면에 새겨짐.';
+    if (d >= 0.999) return '접점의 대척점에서 나온 빛 → 해안선과 경위선이 평면에 새겨짐.';
+    if (d <= 0.001) return '지구 중심의 빛 → 해안선과 경위선이 평면에 새겨짐.';
+    return `축 위 d = ${d.toFixed(2)} 지점의 빛 → 해안선과 경위선이 평면에 새겨짐.`;
   }
-  return '지구 내핵의 빛이 해안선과 경위선을 종이에 새긴다.';
+  return '지구 내핵의 빛 → 해안선과 경위선이 종이에 새겨짐.';
 }
 
 // ---- URL 동기화 -----------------------------------------------------------
@@ -320,7 +332,8 @@ export function loadFromQuery(search) {
   const t = parseNum(q.get('t')) ?? 0;
   selectProjection(projection, { params, stage, step: Math.max(0, step), t: Math.max(0, Math.min(1, t)), compare: q.get('compare') });
   if (q.get('aspect') && ['normal', 'transverse', 'oblique'].includes(q.get('aspect'))) state.aspect = q.get('aspect');
-  if (state.stage === 'adjust' && state.step >= stepCount()) { state.stage = 'unroll'; state.t = 1; }
+  if (state.stage === 'adjust' && state.step >= stepCount()) { state.stage = surfaceType() === 'plane' ? 'project' : 'unroll'; state.t = 1; }
+  if (state.stage === 'unroll' && surfaceType() === 'plane') { state.stage = 'project'; state.t = 1; }
   state.tissot = q.get('tissot') === '1';
   state.projector = q.get('projector') === '1';
   notify();

@@ -1,7 +1,7 @@
 // © 2026 김용현
 // scene/tissot.js — 티소 지표 (PLAN 8.5). 각반경 4° 구면 원(36각형)을 같은 파이프라인에 통과시켜 타원을 얻는다.
 import * as THREE from 'three';
-import { tissotCircles, splitLines, rotatePoints } from '../geometry/clip.js';
+import { tissotCircles, splitLines, splitAtCuts, rotatePoints } from '../geometry/clip.js';
 import { positionOf } from '../geometry/pipeline.js';
 import { LineLayer } from './mapLayer.js';
 
@@ -18,8 +18,17 @@ export class Tissot {
   }
 
   setRotation(rotation) {
-    this.layer.setLines(splitLines(this.circles.map((c) => c.line), rotation));
+    this.baseLines = splitLines(this.circles.map((c) => c.line), rotation);
+    this.cuts = null;
+    this.layer.setLines(this.baseLines);
     this.frameCenters = rotatePoints(this.circles.map((c) => c.center), rotation);
+  }
+
+  /** 단열 도법의 절개선에서 원을 나눈다 */
+  applyCuts(cuts) {
+    if (cuts === this.cuts) return;
+    this.cuts = cuts;
+    this.layer.setLines(cuts ? splitAtCuts(this.baseLines, cuts) : this.baseLines);
   }
 
   update(ctx) {

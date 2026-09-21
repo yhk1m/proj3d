@@ -1,6 +1,6 @@
 // © 2026 김용현
 // ui/stepper.js — 단계 버튼 + 스크러버 + 재생 (PLAN 7장). 모든 단계는 버튼 재생과 슬라이더 스크럽 둘 다 지원한다.
-import { getState, subscribe, timeline, timelineIndex, goTo, next, prev, setT, togglePlay, play, STAGE_LABELS, derivation, canAdjust } from '../state.js';
+import { getState, subscribe, timeline, timelineIndex, goTo, next, prev, setT, togglePlay, play, setState, stageLabel, derivation, canAdjust } from '../state.js';
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -28,8 +28,13 @@ export function mountStepper(container) {
   const scrub = el('input', 'scrub'); scrub.type = 'range'; scrub.min = 0; scrub.max = 1000; scrub.step = 1; scrub.value = 0;
   scrub.setAttribute('aria-label', '진행도');
   const tval = el('span', 'tval', '0%');
+  const auto = el('label', 'ctl ctl-toggle ctl-auto');
+  const autoInput = el('input'); autoInput.type = 'checkbox';
+  autoInput.title = '한 단계가 끝나면 다음 단계를 이어서 재생';
+  autoInput.addEventListener('change', () => setState({ autoplay: autoInput.checked }));
+  auto.append(autoInput, el('span', 'ctl-label', '자동 재생'));
   const skip = el('button', 'chip chip-skip', '조정 단계부터 보기'); skip.type = 'button';
-  transport.append(bPrev, bRew, bPlay, bNext, scrub, tval, skip);
+  transport.append(bPrev, bRew, bPlay, bNext, auto, scrub, tval, skip);
   bar.append(stages, transport);
   container.appendChild(bar);
 
@@ -56,7 +61,7 @@ export function mountStepper(container) {
       stageKey = key;
       stages.innerHTML = '';
       tl.forEach((x, i) => {
-        let label = STAGE_LABELS[x.stage];
+        let label = stageLabel(x.stage);
         if (x.stage === 'adjust') label = `조정 ${x.step + 1}${d && d.steps.length > 1 ? '/' + d.steps.length : ''}`;
         const b = el('button', 'stage', label);
         b.type = 'button';
@@ -76,6 +81,7 @@ export function mountStepper(container) {
     scrub.disabled = s.stage === 'flat';
     tval.textContent = s.stage === 'flat' ? '—' : `${Math.round(s.t * 100)}%`;
     bPlay.innerHTML = s.playing ? ICON.pause : ICON.play;
+    if (autoInput.checked !== !!s.autoplay) autoInput.checked = !!s.autoplay;
     skip.style.display = canAdjust() && s.stage !== 'adjust' ? '' : 'none';
   }
   subscribe(render);

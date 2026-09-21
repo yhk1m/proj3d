@@ -16,11 +16,11 @@ import { lightPosition } from '../projections/perspective.js';
 const tmpP = [0, 0, 0], tmpL = [0, 0, 0], tmpN = [0, 0, 0];
 
 export function inDomain(domain, lamP, phiP) {
-  if (phiP < domain.phiMin - 1e-9 || phiP > domain.phiMax + 1e-9) return false;
+  if (phiP < domain.phiMin - 1e-6 || phiP > domain.phiMax + 1e-6) return false;
   if (domain.maxAngularDist != null) {
     const cosc = Math.cos(phiP) * Math.cos(lamP);
     const c = Math.acos(Math.max(-1, Math.min(1, cosc)));
-    if (c > domain.maxAngularDist + 1e-9) return false;
+    if (c > domain.maxAngularDist + 1e-6) return false;
   }
   return true;
 }

@@ -3,9 +3,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { getState, subscribe, frame, tick, loadFromQuery, entry } from './state.js';
-import { coastlines, graticuleLines, graticuleIntersections, splitLines, rotatePoints } from './geometry/clip.js';
+import { coastlines, graticuleLines, graticuleIntersections, splitLines, splitAtCuts, rotatePoints } from './geometry/clip.js';
 import { maxRayReach, positionOf, paperPosition } from './geometry/pipeline.js';
-import { flatOffset, coneGeometry } from './geometry/bend.js';
+import { flatOffset } from './geometry/bend.js';
 import { unitVector } from './geometry/rotate.js';
 import { lightPosition } from './projections/perspective.js';
 import { distortionAt } from './projections/distortion.js';
@@ -15,22 +15,49 @@ import { Paper } from './scene/paper.js';
 import { MapLayer } from './scene/mapLayer.js';
 import { Rays } from './scene/rays.js';
 import { Tissot } from './scene/tissot.js';
+import { CameraRig } from './scene/camera.js';
 import { mountPicker } from './ui/picker.js';
 import { mountControls } from './ui/controls.js';
 import { mountStepper } from './ui/stepper.js';
 import { mountSidePanel } from './ui/sidePanel.js';
 import { CompareOverlay, AreaRatio } from './ui/compare.js';
-import { tween, updateTweens, ease } from './util/tween.js';
+import { damp } from './util/tween.js';
 
 const D = Math.PI / 180;
 const DEV = /[?&]dev=1/.test(location.search) || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const INSTANT = /[?&]instant=1/.test(location.search); // 스크린샷 검증용: 카메라·지구본 트윈을 즉시 끝낸다
-const dur = (d) => (INSTANT ? 0.001 : d);
+const INSTANT = /[?&]instant=1/.test(location.search); // 스크린샷 검증용: 카메라·지구본 감쇠를 즉시 끝낸다
+
+const ICONS = {
+  fit: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><circle cx="12" cy="12" r="3"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+};
 
 async function loadJSON(url) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`${url}: ${r.status}`);
   return r.json();
+}
+
+/** 뷰포트 위 시점 도구: 자동 맞춤 · 확대 · 축소 + 조작 안내 */
+function mountViewTools(viewport, rig) {
+  const box = document.createElement('div');
+  box.id = 'viewtools';
+  const mk = (title, svg, fn) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'vbtn'; b.title = title; b.innerHTML = svg;
+    b.addEventListener('click', fn);
+    box.appendChild(b);
+    return b;
+  };
+  const fitBtn = mk('시점 자동 맞춤 — 단계마다 광원·지구본·종이가 보이게 카메라를 맞춤 (드래그하면 해제)', ICONS.fit, () => rig.fit());
+  mk('확대', ICONS.plus, () => rig.zoom(0.8));
+  mk('축소', ICONS.minus, () => rig.zoom(1.25));
+  const hint = document.createElement('div');
+  hint.className = 'vhint';
+  hint.textContent = '드래그 회전 · 휠 확대/축소 · 오른쪽 드래그 이동 · 시점이 흐트러지면 왼쪽 위 맞춤 버튼';
+  viewport.append(box, hint);
+  return { fitBtn };
 }
 
 async function main() {
@@ -48,9 +75,12 @@ async function main() {
   scene.add(camera);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.minDistance = 1.2;
-  controls.maxDistance = 40;
+  controls.dampingFactor = 0.1;
+  controls.rotateSpeed = 0.65;
+  controls.zoomSpeed = 0.9;
+  controls.panSpeed = 0.7;
+  controls.minDistance = 1.5;
+  controls.maxDistance = 60;
   scene.add(new THREE.AmbientLight(0xffffff, 0.8));
   const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
   keyLight.position.set(1.5, 2.5, 3);
@@ -82,6 +112,9 @@ async function main() {
   compare.setCoastSource(coastGeo);
   const areaRatio = new AreaRatio(countries);
 
+  const rig = new CameraRig(camera, controls, { frameGroup, moveGroup, globeGroup });
+  rig.instant = INSTANT;
+
   // ---- UI ----
   mountPicker(document.getElementById('picker'));
   mountControls(document.getElementById('controls'), {
@@ -90,21 +123,21 @@ async function main() {
   mountStepper(document.getElementById('stepper'));
   const side = mountSidePanel(document.getElementById('side'));
   const tooltip = document.getElementById('tooltip');
+  const { fitBtn } = mountViewTools(viewport, rig);
 
   // ---- 상태 → 씬 ----
   let dirty = true;
   subscribe(() => { dirty = true; });
   loadFromQuery(location.search);
 
-  let lastRot = null, lastFrame = null, lastTissot = null, lastCompare = null, lastLowPower = null, lastFlat = null, lastFitKey = null;
+  let lastRot = null, lastFrame = null, lastTissot = null, lastCompare = null, lastLowPower = null;
+  let lastStage = null, lastStep = -1, lastEntry = null;
+  let lastCuts, baseLines = { coast: [], graticule: [] };
   let rayPoints = [];
   let currentCtx = null, currentFrame = null;
+  let paperOpacity = 1, paperOpacityTarget = 1;
   const offset = [0, 0, 0];
   const M4 = new THREE.Matrix4();
-
-  function frameToWorld(v) {
-    return new THREE.Vector3(v[0], v[1], v[2]).applyQuaternion(frameGroup.quaternion);
-  }
 
   function paperBox() {
     const gp = paper.gridPos;
@@ -115,85 +148,6 @@ async function main() {
     }
     if (!Number.isFinite(min[0])) return { min: [-1, -1, 1], max: [1, 1, 1] };
     return { min, max };
-  }
-
-  let camTween = null, globeTween = null;
-  function moveCamera(pos, target, up, duration = 1.2) {
-    if (camTween) camTween.cancel();
-    controls.enabled = false;
-    const from = [camera.position.x, camera.position.y, camera.position.z, controls.target.x, controls.target.y, controls.target.z, camera.up.x, camera.up.y, camera.up.z];
-    const to = [pos.x, pos.y, pos.z, target.x, target.y, target.z, up.x, up.y, up.z];
-    camTween = tween({
-      from, to, duration: dur(duration), easing: ease.inOutCubic,
-      onUpdate: (v) => {
-        camera.position.set(v[0], v[1], v[2]);
-        controls.target.set(v[3], v[4], v[5]);
-        camera.up.set(v[6], v[7], v[8]).normalize();
-        camera.lookAt(controls.target);
-      },
-      onComplete: () => { controls.enabled = true; controls.update(); camTween = null; },
-    });
-  }
-
-  function moveGlobe(pos, scale, duration = 1.2) {
-    if (globeTween) globeTween.cancel();
-    const from = [globeGroup.position.x, globeGroup.position.y, globeGroup.position.z, globeGroup.scale.x];
-    globeTween = tween({
-      from, to: [pos.x, pos.y, pos.z, scale], duration: dur(duration), easing: ease.inOutCubic,
-      onUpdate: (v) => { globeGroup.position.set(v[0], v[1], v[2]); globeGroup.scale.setScalar(v[3]); },
-      onComplete: () => { globeTween = null; },
-    });
-  }
-
-  /** 펼친 뒤: 종이 정면(법선 방향) 시점, 지구본은 좌측 상단에 작게 */
-  function fitFlatView(fr, duration = 1.2) {
-    const g = coneGeometry(fr.surface, fr.params);
-    const cone = g.kind === 'cone';
-    const b = paperBox();
-    const center = [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
-    const normal = cone ? [0, 1, 0] : [0, 0, 1];
-    const up = cone ? [0, 0, -1] : [0, 1, 0];
-    const w0 = b.max[0] - b.min[0];
-    const h = cone ? b.max[2] - b.min[2] : b.max[1] - b.min[1];
-    // 지구본은 종이 왼쪽 위, 종이 평면보다 조금 앞(법선 방향)에 둔다. 카메라 맞춤에는 지구본 폭도 넣는다.
-    const gscale = 0.32;
-    const gx = center[0] - w0 / 2 - gscale - 0.15;
-    const gpos = frameToWorld([
-      gx + normal[0] * (gscale + 0.1),
-      center[1] + up[1] * (h / 2 - gscale) + normal[1] * (gscale + 0.1),
-      center[2] + up[2] * (h / 2 - gscale) + normal[2] * (gscale + 0.1),
-    ]);
-    // 지구본이 왼쪽 바깥에 있으므로 맞춤 상자를 왼쪽으로만 넓히고 시선 중심을 그만큼 옮긴다
-    const leftExtent = w0 / 2 + 0.15 + 2 * gscale + 0.25, rightExtent = w0 / 2 + 0.1;
-    const w = leftExtent + rightExtent;
-    const look = [center[0] - (leftExtent - rightExtent) / 2, center[1], center[2]];
-    const fov = camera.fov * D;
-    const dist = Math.max((h / 2) / Math.tan(fov / 2), (w / 2) / (Math.tan(fov / 2) * camera.aspect)) * 1.12 + 0.5;
-    const pos = frameToWorld([look[0] + normal[0] * dist, look[1] + normal[1] * dist, look[2] + normal[2] * dist]);
-    moveCamera(pos, frameToWorld(look), frameToWorld(up), duration);
-    moveGlobe(gpos, gscale, duration);
-  }
-
-  /** 기본 3D 시점: 프레임 +Z(종이 정면) 쪽에서 비스듬히, 지구본과 종이가 모두 들어오게 */
-  function fitDefaultView(duration = 1.2) {
-    const b = paperBox();
-    const off = moveGroup.position;
-    const min = [Math.min(-1, b.min[0] + off.x), Math.min(-1, b.min[1] + off.y), Math.min(-1, b.min[2] + off.z)];
-    const max = [Math.max(1, b.max[0] + off.x), Math.max(1, b.max[1] + off.y), Math.max(1, b.max[2] + off.z)];
-    const center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
-    const radius = Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2;
-    const fovV = camera.fov * D;
-    const fovH = 2 * Math.atan(Math.tan(fovV / 2) * camera.aspect);
-    const dist = Math.max(2.5, (radius / Math.sin(Math.min(fovV, fovH) / 2)) * 0.92);
-    // 평면(접점 = 프레임 +Z)은 비스듬히 봐야 종이 아래의 지구본과 광선이 보인다
-    const plane = currentFrame && currentFrame.surface && currentFrame.surface.type === 'plane';
-    const dir = (plane ? new THREE.Vector3(0.85, 0.55, 0.8) : new THREE.Vector3(0.32, 0.26, 1)).normalize();
-    const pos = frameToWorld([center[0] + dir.x * dist, center[1] + dir.y * dist, center[2] + dir.z * dist]);
-    const target = frameToWorld(center);
-    const view = pos.clone().sub(target).normalize();
-    const up = Math.abs(view.y) > 0.9 ? frameToWorld([0, 1, 0]) : new THREE.Vector3(0, 1, 0);
-    moveCamera(pos, target, up, duration);
-    moveGlobe(new THREE.Vector3(0, 0, 0), 1, duration);
   }
 
   function assertCollinear(fr) {
@@ -228,6 +182,14 @@ async function main() {
     const fr = frame();
     if (fr === lastFrame && s.tissot === lastTissot && s.compare === lastCompare && s.lowPower === lastLowPower) return;
     document.body.classList.toggle('projector', !!s.projector);
+    const plane = fr.surface.type === 'plane';           // 평면은 펼치기 단계가 없다
+    const projectDone = s.stage === 'project' && s.t >= 0.999;
+
+    // 단계·도법이 바뀌면 카메라 자동 추적을 다시 켠다
+    if (s.stage !== lastStage || s.step !== lastStep || fr.entry !== lastEntry) {
+      rig.autoFrame = true;
+      lastStage = s.stage; lastStep = s.step; lastEntry = fr.entry;
+    }
 
     if (s.lowPower !== lastLowPower) {
       lastLowPower = s.lowPower;
@@ -239,7 +201,8 @@ async function main() {
 
     if (fr.rotation !== lastRot) {
       lastRot = fr.rotation;
-      mapLayer.setLines({ coast: splitLines(coastGeo, fr.rotation), graticule: splitLines(gratGeo, fr.rotation) });
+      baseLines = { coast: splitLines(coastGeo, fr.rotation), graticule: splitLines(gratGeo, fr.rotation) };
+      lastCuts = undefined; // 아래에서 절개선 적용과 함께 setLines
       mapLayer.setRotation(fr.rotation);
       tissot.setRotation(fr.rotation);
       compare.setRotation(fr.rotation, splitLines);
@@ -248,7 +211,14 @@ async function main() {
       const m = fr.rotation.toWorld;
       M4.set(m[0], m[1], m[2], 0, m[3], m[4], m[5], 0, m[6], m[7], m[8], 0, 0, 0, 0, 1);
       frameGroup.quaternion.setFromRotationMatrix(M4);
-      lastFlat = null; // 시점 다시 잡기
+    }
+
+    // 단열 도법: 절개 자오선에서 선을 다시 나눈다(구드)
+    const cuts = fr.domain.cuts || null;
+    if (cuts !== lastCuts) {
+      lastCuts = cuts;
+      mapLayer.setLines({ coast: splitAtCuts(baseLines.coast, cuts), graticule: splitAtCuts(baseLines.graticule, cuts) });
+      tissot.applyCuts(cuts);
     }
 
     const ctx = { f: fr.f, domain: fr.domain, surface: fr.surface, params: fr.params, light: fr.light, bendT: fr.bendT, s: fr.s, rayReach: 1 };
@@ -261,10 +231,18 @@ async function main() {
     if (showMap) mapLayer.update(ctx);
     tissot.visible = showMap && s.tissot;
     if (tissot.visible) tissot.update(ctx);
-    const rayI = s.stage === 'project' ? 1 : s.stage === 'unroll' ? Math.max(0, 1 - s.t * 2.5) : 0;
+
+    // 광선·광원: 빛 단계에 켜고 펼치기(평면은 투영이 끝나는 순간)에 끈다
+    let rayI = 0;
+    if (s.stage === 'project') rayI = plane && projectDone ? 0 : 1;
+    else if (s.stage === 'unroll') rayI = Math.max(0, 1 - s.t * 2.5);
     rays.group.visible = rayI > 0;
     if (rayI > 0) rays.update(ctx, rayI);
-    globe.setOpacity(s.stage === 'project' ? 1 - 0.65 * Math.min(1, s.t * 3) : s.stage === 'unroll' ? 0.35 + 0.65 * Math.min(1, s.t * 2) : 1);
+
+    // 지구본은 빛 단계에 반투명(0.35), 종이도 빛 단계에 반투명(0.5) — 안쪽 광원과 광선이 보이게
+    globe.setOpacity(s.stage === 'project' ? (plane && projectDone ? 1 : 1 - 0.65 * Math.min(1, s.t * 3)) : s.stage === 'unroll' ? 0.35 + 0.65 * Math.min(1, s.t * 2) : 1);
+    paperOpacityTarget = s.stage === 'project' ? (plane && projectDone ? 1 : 0.5) : s.stage === 'unroll' ? 0.5 + 0.5 * Math.min(1, s.t / 0.3) : 1;
+
     if (fr.moveP < 1) {
       const b = paperBox();
       flatOffset(fr.surface, fr.params, (b.max[0] - b.min[0]) / 2, offset);
@@ -273,15 +251,7 @@ async function main() {
       moveGroup.position.set(0, 0, 0);
     }
     compare.update(fr, ctx);
-
-    if (fr.flatView !== lastFlat) {
-      lastFlat = fr.flatView;
-      if (fr.flatView) fitFlatView(fr); else fitDefaultView();
-      lastFitKey = fr.entry.id + '|' + (fr.stepInfo ? fr.stepInfo.index : -1);
-    } else if (fr.flatView) {
-      const key = fr.entry.id + '|' + (fr.stepInfo ? fr.stepInfo.index : -1);
-      if (key !== lastFitKey && s.t >= 1) { lastFitKey = key; fitFlatView(fr, 0.9); }
-    }
+    rig.setTarget(fr, s, paperBox());
 
     if (lastFrame === null || fr.root !== lastFrame.root || fr.params !== lastFrame.params) assertCollinear(fr);
     if (fr.stepInfo && fr.stepInfo.panel === 'areaRatio') renderAreaRatio();
@@ -345,26 +315,34 @@ async function main() {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    if (currentFrame) rig.setTarget(currentFrame, getState(), paperBox());
   }
   window.addEventListener('resize', resize);
   resize();
-  fitDefaultView(0.01);
 
   // ---- 루프 ----
   let last = performance.now();
+  let snapped = false;
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     tick(dt);
-    updateTweens(dt);
-    if (dirty) { dirty = false; refresh(); }
-    if (controls.enabled) controls.update();
+    if (dirty) {
+      dirty = false;
+      refresh();
+      if (!snapped) { rig.snap(); snapped = true; }
+    }
+    rig.update(dt);
+    paperOpacity = INSTANT ? paperOpacityTarget : damp(paperOpacity, paperOpacityTarget, 6, dt);
+    paper.setOpacity(paperOpacity);
+    fitBtn.classList.toggle('on', rig.autoFrame);
+    controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
   document.body.classList.add('ready');
-  window.__app = { scene, camera, renderer, refresh, getState, frame, entry };
+  window.__app = { scene, camera, renderer, controls, rig, refresh, getState, frame, entry, paperBox };
 }
 
 main().catch((err) => {
