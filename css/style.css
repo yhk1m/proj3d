@@ -196,7 +196,11 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .vhint { position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: var(--muted); pointer-events: none; opacity: 0.85; }
 
 /* ---- 정보 버튼 · 팝오버 ---- */
-.ctl-tissot { gap: 4px; }
+.ctl-tissot { gap: 6px; }
+/* 헤더 컨트롤: 그룹(축 · 표준위선 · 티소 · 비교) 사이를 세로 구분선으로 나눠 ⓘ 가 티소 그룹 것임이 보이게 */
+#topbar .controls { gap: 0; }
+#topbar .controls > .ctl { padding: 0 14px; border-left: 1px solid var(--navy-line); }
+#topbar .controls > .ctl:first-child { padding-left: 4px; border-left: 0; }
 .ibtn {
   width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; padding: 0;
   background: transparent; border: 1px solid var(--navy-line); color: var(--muted);
@@ -296,7 +300,8 @@ body.projector #topbar button, body.projector #stepper button { font-size: 16px;
     background: rgba(20,33,61,0.98); border-bottom: 1px solid var(--navy-line); box-shadow: 0 12px 30px rgba(0,0,0,0.45); padding: 12px 14px 14px;
   }
   body.menu-open #controls { display: block; }
-  #controls .controls { flex-wrap: wrap; overflow: visible; gap: 12px 14px; padding: 0; align-items: center; }
+  #controls .controls { flex-wrap: wrap; overflow: visible; gap: 10px; padding: 0; align-items: center; }
+  #controls .controls > .ctl { border: 1px solid var(--navy-line); border-radius: 10px; background: rgba(12,24,46,0.35); padding: 6px 10px; }   /* 서랍에서는 그룹마다 상자 */
   #controls .ctl-slider input[type="range"] { width: 130px; }
   .drawer-utils { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--navy-line); }
   /* 본문: 3D 위, 설명 패널은 하단 시트 */
