@@ -350,7 +350,8 @@ export function loadFromQuery(search) {
   const id = q.get('p');
   const projection = id && PROJECTIONS[id] ? id : 'mercator';
   const params = {};
-  for (const k of ['phi0', 'phi1', 'phi2']) { const n = parseNum(q.get(k)); if (n != null) params[k] = n * D; }
+  const locked = new Set([...(PROJECTIONS[projection].lockParams || [])]);
+  for (const k of ['phi0', 'phi1', 'phi2']) { const n = parseNum(q.get(k)); if (n != null && !locked.has(k)) params[k] = n * D; }
   const dv = parseNum(q.get('d')); if (dv != null) params.d = dv;
   const stage = STAGES.includes(q.get('stage')) ? q.get('stage') : 'flat';
   const step = parseInt(q.get('step') || '0', 10) || 0;

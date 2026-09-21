@@ -111,9 +111,12 @@ export function mountControls(container) {
     if (type === 'cone') {
       const secant = s.params.phi2 != null;
       const phi1 = Math.round((s.params.phi1 ?? 40 * D) / D);
-      const tg = toggle({ label: secant ? '할선' : '접선', checked: secant, onChange: (on) => setParam('phi2', on ? Math.min(85, phi1 + 20) * D : null) });
-      tg.title = secant ? '할선 원뿔 — 표준위선 2개' : '접선 원뿔 — 표준위선 1개 (체크하면 할선)';
-      box.appendChild(tg);
+      if (e.secant) {
+        // 교과서에서 표준위선 2개로 다루는 도법(람베르트 정각원추·알베르스)만 접선/할선 전환
+        const tg = toggle({ label: secant ? '할선' : '접선', checked: secant, onChange: (on) => setParam('phi2', on ? Math.min(85, phi1 + 20) * D : null) });
+        tg.title = secant ? '할선 원뿔 — 표준위선 2개' : '접선 원뿔 — 표준위선 1개 (체크하면 할선)';
+        box.appendChild(tg);
+      }
       const s1 = slider({ label: secant ? 'φ₁' : 'φ₀', title: '표준위선 — 90° = 평면, 0° = 원통 (세 가전면은 한 가족)', min: 0, max: 90, step: 1, value: phi1, format: (v) => `${v}°`, onInput: (v) => {
         setParam('phi1', v * D);
         if (s.params.phi2 != null && s.params.phi2 / D < v + 1) setParam('phi2', Math.min(90, v + 1) * D);

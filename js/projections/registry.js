@@ -8,7 +8,8 @@
 //  forward  : (λ', φ', params) → [x, y]  (프레임 좌표, 단위구, 라디안)
 //  derivation : derivations.js 시나리오 id. 빛 투영 도법은 null
 //  defaultAspect : 선택 시 기본 aspect ('normal' | 'transverse' | 'oblique')
-//  lockParams : UI 에서 잠글 매개변수 이름 배열
+//  lockParams : UI 에서 잠글 매개변수 이름 배열 (접선으로 고정하는 도법은 phi0 을 잠근다)
+//  secant : 원뿔에서 접선/할선 전환을 허용하는 도법(교과서에서 표준위선 2개로 다루는 LCC·알베르스만)
 //  modern : "요즘 세계지도에 쓰이는 도법" 바로가기 그룹
 //  captionKo : 명사형 어미의 짧은 설명(수업용 자막)
 import * as P from './perspective.js';
@@ -42,7 +43,7 @@ export const PROJECTIONS = {
   centralCylindrical: {
     id: 'centralCylindrical', nameKo: '중심원통도법', family: 'cylindrical', property: 'none',
     surface: { type: 'cylinder' }, light: { type: 'point', d: 0 },
-    params: { phi0: 0 }, domain: rect(-75, 75),
+    params: { phi0: 0 }, domain: rect(-75, 75), lockParams: ['phi0'],
     forward: P.centralCylindrical, derivation: null,
     formulaTex: 'x = \\lambda,\\quad y = \\tan\\varphi',
     captionKo: '지구 중심의 빛이 원통에 그린 지도. 위선 간격이 tan φ 로 벌어져 고위도가 끝없이 늘어남. 메르카토르가 아니라 "중심원통도법".',
@@ -66,7 +67,7 @@ export const PROJECTIONS = {
   mercator: {
     id: 'mercator', nameKo: '메르카토르 도법', family: 'cylindrical', property: 'conformal',
     surface: { type: 'cylinder' }, light: null,
-    params: { phi0: 0 }, domain: rect(-85, 85),
+    params: { phi0: 0 }, domain: rect(-85, 85), lockParams: ['phi0'],
     forward: A.mercator, derivation: 'mercatorFromCentral',
     formulaTex: 'y = \\ln\\tan\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right)',
     captionKo: '빛 투영이 아니라 수학적 조정으로 만든 정각도법. 가로가 늘어난 비율(sec φ)만큼 세로도 늘려 모양(각)을 지킴. 항해도·웹 지도의 표준.',
@@ -74,7 +75,7 @@ export const PROJECTIONS = {
   miller: {
     id: 'miller', nameKo: '밀러 도법', family: 'cylindrical', property: 'compromise',
     surface: { type: 'cylinder' }, light: null,
-    params: { phi0: 0 }, domain: rect(-90, 90),
+    params: { phi0: 0 }, domain: rect(-90, 90), lockParams: ['phi0'],
     forward: A.miller, derivation: 'millerFromMercator',
     formulaTex: 'y = 1.25\\,\\ln\\tan\\left(\\tfrac{\\pi}{4}+0.4\\varphi\\right)',
     captionKo: '메르카토르의 위도를 0.8배로 줄여 투영한 뒤 1.25배 늘린 절충 도법. 극까지 그릴 수 있지만 정각도 정적도 아님.',
@@ -82,7 +83,7 @@ export const PROJECTIONS = {
   transverseMercator: {
     id: 'transverseMercator', nameKo: '횡축 메르카토르(TM)', family: 'cylindrical', property: 'conformal',
     surface: { type: 'cylinder' }, light: null,
-    params: { phi0: 0 }, domain: rect(-85, 85),
+    params: { phi0: 0 }, domain: rect(-85, 85), lockParams: ['phi0'],
     forward: A.mercator, derivation: 'mercatorFromCentral', defaultAspect: 'transverse',
     formulaTex: "y' = \\ln\\tan\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi'}{2}\\right)",
     captionKo: '원통을 눕혀 한 경선(127°E)에 접하게 한 메르카토르. 접선 경선 근처의 왜곡이 작음 → 우리나라 지형도(TM 좌표계)와 UTM 의 바탕.',
@@ -113,7 +114,7 @@ export const PROJECTIONS = {
   lambertConformalConic: {
     id: 'lambertConformalConic', nameKo: '람베르트 정각원추도법', family: 'conic', property: 'conformal',
     surface: { type: 'cone' }, light: null,
-    params: { phi1: 30 * D, phi2: 60 * D }, domain: rect(-60, 90),
+    params: { phi1: 30 * D, phi2: 60 * D }, domain: rect(-60, 90), secant: true,
     forward: A.lambertConformalConic, derivation: 'lccFromCentral',
     formulaTex: '\\rho = F\\cot^{n}\\!\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right),\\quad \\theta = n\\lambda',
     captionKo: '두 표준위선(30°, 60°)을 지나는 할선 원뿔 + 정각 조건. 중위도 국가의 항공도·기상도에 쓰임.',
@@ -121,7 +122,7 @@ export const PROJECTIONS = {
   albers: {
     id: 'albers', nameKo: '알베르스 정적원추도법', family: 'conic', property: 'equalArea',
     surface: { type: 'cone' }, light: null,
-    params: { phi1: 30 * D, phi2: 60 * D }, domain: rect(-90, 90),
+    params: { phi1: 30 * D, phi2: 60 * D }, domain: rect(-90, 90), secant: true,
     forward: A.albers, derivation: 'albersFromCentral',
     formulaTex: '\\rho = \\tfrac{\\sqrt{C-2n\\sin\\varphi}}{n},\\quad \\theta = n\\lambda',
     captionKo: '두 표준위선(30°, 60°) 할선 원뿔 + 정적 조건. 미국·유럽처럼 동서로 긴 지역의 통계 지도에 쓰임.',
