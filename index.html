@@ -1,0 +1,42 @@
+<!-- © 2026 김용현 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지도 투영법 3D — 종이를 씌우고, 빛을 쏘고, 펼치고, 조정한다</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="고등학교 지리 수업용 지도 투영법 3D 애니메이션. 원통·원뿔·평면 종이를 지구본에 씌우고 내핵의 빛으로 투영한 뒤 펼치고, 메르카토르·로빈슨·Equal Earth 등은 수학적 조정 과정으로 보여준다.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.min.css">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/",
+    "d3-geo": "https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/+esm",
+    "d3-geo-projection": "https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/+esm",
+    "topojson-client": "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/+esm",
+    "katex": "https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.mjs"
+  }
+}
+</script>
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+      <span>지도 투영법 3D</span>
+    </div>
+    <div id="picker"></div>
+    <div id="controls"></div>
+  </header>
+  <main id="main">
+    <div id="viewport" aria-label="3D 뷰"></div>
+    <aside id="side"></aside>
+  </main>
+  <footer id="stepper"></footer>
+  <div id="tooltip" role="tooltip"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

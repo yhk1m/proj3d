@@ -1,0 +1,139 @@
+/* © 2026 김용현 */
+/* 지도 투영법 3D — 네이비 #1B2A4A 기반. 시각 연출 담당이 자유롭게 고쳐도 되는 파일 (PLAN 0.3) */
+:root {
+  --navy: #1B2A4A;
+  --navy-deep: #14213D;
+  --navy-line: #2E3F63;
+  --panel: #1F3158;
+  --text: #E8EDF5;
+  --muted: #A9B6CC;
+  --accent: #FFD166;
+  --ink: #1B2A4A;
+  --paper: #F4EEDC;
+  --ok: #7EE0A8;
+  --warn: #E8553F;
+  --font: "Pretendard Variable", Pretendard, "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  --side-w: 340px;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: var(--font);
+  background: var(--navy);
+  color: var(--text);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+}
+button, select, input { font-family: inherit; font-size: inherit; color: inherit; }
+button { cursor: pointer; }
+
+/* ---- 상단 ---- */
+#topbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 14px; border-bottom: 1px solid var(--navy-line); background: var(--navy);
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--accent); white-space: nowrap; }
+.picker {
+  background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; padding: 6px 10px; min-width: 260px;
+}
+.controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ctl { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ctl-label { color: var(--muted); font-size: 12px; }
+.ctl-value { font-variant-numeric: tabular-nums; min-width: 64px; font-size: 12px; }
+.ctl-slider input[type="range"] { width: 120px; }
+.ctl-hint { color: var(--muted); font-size: 11px; }
+.ctl-toggle input { accent-color: var(--accent); }
+.ctl-minor { opacity: 0.8; }
+.chip {
+  background: transparent; border: 1px solid var(--navy-line); border-radius: 999px; padding: 3px 10px; font-size: 12px; color: var(--muted);
+}
+.chip.on { background: var(--accent); color: var(--ink); border-color: var(--accent); font-weight: 600; }
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip.on:hover { color: var(--ink); }
+.compare-select { background: var(--panel); border: 1px solid var(--navy-line); border-radius: 6px; padding: 3px 6px; font-size: 12px; max-width: 160px; }
+
+/* ---- 본문 ---- */
+#main { display: grid; grid-template-columns: 1fr var(--side-w); min-height: 0; }
+#viewport { position: relative; min-height: 0; background: var(--navy-deep); }
+#viewport canvas { display: block; width: 100% !important; height: 100% !important; }
+#side { border-left: 1px solid var(--navy-line); background: var(--navy); overflow: auto; }
+.fatal { position: absolute; inset: 0; display: grid; place-items: center; color: var(--warn); }
+
+.side-panel { padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+.sp-title { margin: 0; font-size: 18px; font-weight: 700; }
+.sp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.chip-i { font-size: 11px; color: var(--muted); border: 1px solid var(--navy-line); border-radius: 999px; padding: 1px 8px; }
+.sp-stage { color: var(--accent); font-weight: 600; font-size: 13px; }
+.sp-caption { margin: 0; font-size: 14px; line-height: 1.65; word-break: keep-all; }
+.sp-badge { display: inline-block; align-self: flex-start; background: rgba(126,224,168,0.15); color: var(--ok); border: 1px solid rgba(126,224,168,0.5); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+.sp-tex { background: var(--panel); border-radius: 8px; padding: 6px 10px; overflow-x: auto; font-size: 14px; }
+.sp-tex .katex-display { margin: 4px 0; }
+.sp-panel:empty { display: none; }
+.sp-graph { width: 100%; height: auto; background: var(--panel); border-radius: 8px; }
+.sp-table table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.sp-table th, .sp-table td { padding: 2px 6px; text-align: right; border-bottom: 1px solid var(--navy-line); }
+.sp-table th:first-child, .sp-table td:first-child { text-align: left; }
+.sp-table tr.hl td { background: rgba(255,209,102,0.22); color: var(--accent); font-weight: 700; }
+.sp-table-note { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+.sp-blend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sp-mini { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.sp-mini canvas { background: var(--panel); border-radius: 6px; width: 100%; height: auto; }
+.sp-blend-w { grid-column: 1 / -1; font-size: 12px; color: var(--accent); text-align: center; }
+.sp-area-title { font-weight: 600; margin-bottom: 6px; }
+.sp-area-list { display: flex; flex-direction: column; gap: 4px; }
+.sp-area-row { display: flex; justify-content: space-between; padding: 4px 8px; border-radius: 6px; background: var(--panel); }
+.sp-area-row.on { outline: 1px solid var(--accent); color: var(--accent); }
+.sp-area-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+.sp-area-note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+.sp-readout { font-size: 12px; color: var(--muted); border-top: 1px solid var(--navy-line); padding-top: 8px; }
+.sp-readout:empty { display: none; }
+.badge { color: var(--ok); font-weight: 600; }
+
+/* ---- 하단 스테퍼 ---- */
+#stepper { border-top: 1px solid var(--navy-line); background: var(--navy); }
+.stepper { display: flex; flex-direction: column; gap: 6px; padding: 8px 14px 10px; }
+.stages { display: flex; gap: 6px; flex-wrap: wrap; }
+.stage {
+  background: transparent; border: 1px solid var(--navy-line); border-radius: 8px; padding: 5px 12px; font-size: 13px; color: var(--muted);
+}
+.stage.done { border-color: rgba(255,209,102,0.5); color: var(--text); }
+.stage.on { background: var(--accent); color: var(--ink); border-color: var(--accent); font-weight: 700; }
+.transport { display: flex; align-items: center; gap: 8px; }
+.tbtn { background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; width: 36px; height: 32px; display: grid; place-items: center; color: var(--text); }
+.tbtn:hover { border-color: var(--accent); }
+.tbtn-play { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.scrub { flex: 1; accent-color: var(--accent); }
+.tval { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+.chip-skip { margin-left: 4px; }
+
+/* ---- 툴팁 ---- */
+#tooltip {
+  position: fixed; display: none; pointer-events: none; z-index: 20;
+  background: rgba(20,33,61,0.95); border: 1px solid var(--navy-line); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.5;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+}
+
+/* ---- 프로젝터 모드: 큰 글씨, 고대비 ---- */
+body.projector { font-size: 17px; }
+body.projector .sp-caption { font-size: 20px; line-height: 1.6; }
+body.projector .sp-title { font-size: 24px; }
+body.projector .sp-stage { font-size: 16px; }
+body.projector .stage { font-size: 16px; padding: 8px 16px; }
+body.projector .sp-tex { font-size: 18px; }
+body.projector .ctl-minor, body.projector .brand span { display: none; }
+body.projector { --muted: #D5DEEC; --navy-line: #4A5F8C; --side-w: 420px; }
+
+/* ---- 모바일: 측면 패널을 하단 시트로 ---- */
+@media (max-width: 860px) {
+  body { font-size: 13px; }
+  #main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  #side { border-left: 0; border-top: 1px solid var(--navy-line); max-height: 38vh; }
+  .side-panel { padding: 10px 14px 16px; }
+  .picker { min-width: 0; flex: 1; }
+  .ctl-slider input[type="range"] { width: 90px; }
+  .sp-graph { max-height: 140px; }
+}

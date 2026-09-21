@@ -1,0 +1,71 @@
+<!-- © 2026 김용현 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>검증 — 지도 투영법 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="importmap">
+{
+  "imports": {
+    "d3-geo": "https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/+esm",
+    "d3-geo-projection": "https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/+esm",
+    "topojson-client": "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/+esm"
+  }
+}
+</script>
+<style>
+  body { font-family: Pretendard, "Noto Sans KR", system-ui, sans-serif; background: #1B2A4A; color: #E8EDF5; margin: 0; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sum { margin: 0 0 16px; color: #A9B6CC; }
+  .sum.ok { color: #7EE0A8; } .sum.bad { color: #FF8A80; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2E3F63; vertical-align: top; }
+  th { color: #A9B6CC; font-weight: 600; }
+  td.section { color: #F2C572; font-weight: 700; padding-top: 18px; }
+  td.pass { color: #7EE0A8; font-weight: 700; white-space: nowrap; }
+  td.fail { color: #FF8A80; font-weight: 700; white-space: nowrap; }
+  td.detail { color: #A9B6CC; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>tests/verify.html — 수치 검증</h1>
+<p class="sum" id="sum">실행 중…</p>
+<table id="tbl"><thead><tr><th>결과</th><th>항목</th><th>수치</th></tr></thead><tbody></tbody></table>
+<script type="module">
+  import { runAll } from './suite.js';
+  const tbody = document.querySelector('#tbl tbody');
+  const sum = document.getElementById('sum');
+  const loadJSON = (rel) => fetch('../' + rel).then((r) => { if (!r.ok) throw new Error(rel); return r.json(); });
+  try {
+    const results = await runAll({ loadJSON });
+    let section = '', fail = 0;
+    for (const r of results) {
+      if (r.section !== section) {
+        section = r.section;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="section" colspan="3"></td>`;
+        tr.firstChild.textContent = section;
+        tbody.appendChild(tr);
+      }
+      const tr = document.createElement('tr');
+      const c1 = document.createElement('td'); c1.className = r.pass ? 'pass' : 'fail'; c1.textContent = r.pass ? 'PASS' : 'FAIL';
+      const c2 = document.createElement('td'); c2.textContent = r.name;
+      const c3 = document.createElement('td'); c3.className = 'detail'; c3.textContent = r.detail || '';
+      tr.append(c1, c2, c3);
+      tbody.appendChild(tr);
+      if (!r.pass) fail++;
+    }
+    sum.textContent = `${results.length - fail} / ${results.length} 통과${fail ? ` — ${fail} 실패` : ' — 전 항목 통과'}`;
+    sum.className = 'sum ' + (fail ? 'bad' : 'ok');
+    window.__verify = { results, fail };
+    console.log('VERIFY_RESULT', JSON.stringify({ total: results.length, fail }));
+  } catch (err) {
+    sum.textContent = '오류: ' + err.message;
+    sum.className = 'sum bad';
+    console.error(err);
+    console.log('VERIFY_RESULT', JSON.stringify({ error: String(err) }));
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "projection3d",
+  "private": true,
+  "type": "module",
+  "description": "지도 투영법 3D 시각화 (빌드 없음; devDependencies는 tests/를 Node에서 돌리기 위한 것)",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "serve": "python -m http.server 8765"
+  },
+  "devDependencies": {
+    "d3-geo": "3.1.1",
+    "d3-geo-projection": "4.0.0",
+    "topojson-client": "3.1.0"
+  }
+}
