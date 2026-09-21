@@ -260,7 +260,7 @@ export function mountSidePanel(container) {
   const panel = el('div', 'sp-panel');
   const readout = el('div', 'sp-readout');
   const copy = el('div', 'sp-copy');
-  copy.append('(c) 2026 양정고등학교 지리교사 김용현T | ');
+  copy.append('ⓒ 2026 양정고등학교 지리교사 김용현T | ');
   const link = el('a', null, 'https://bgnl.kr');
   link.href = 'https://bgnl.kr'; link.target = '_blank'; link.rel = 'noopener';
   copy.appendChild(link);
