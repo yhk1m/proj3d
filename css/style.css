@@ -23,6 +23,7 @@ body {
   color: var(--text);
   display: grid;
   grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);   /* 헤더·푸터의 최소 폭이 레이아웃을 넓히지 못하게 */
   height: 100vh;
   overflow: hidden;
   font-size: 14px;
@@ -143,22 +144,23 @@ body.projector .sp-texnote { font-size: 16px; }
 
 /* ---- 하단 스테퍼 ---- */
 #stepper { border-top: 1px solid var(--navy-line); background: var(--navy); }
-.stepper { display: flex; flex-direction: column; gap: 6px; padding: 8px 14px 10px; }
-.stages { display: flex; gap: 6px; flex-wrap: wrap; }
+/* 한 줄 리모컨: [단계 버튼들][◁◁ |◁ ▶ ▷|][자동 재생][진행바(남는 폭)][%][유틸] */
+#stepper { min-width: 0; overflow: hidden; }
+.stepper { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 8px 14px; min-width: 0; }
+.stages { display: flex; gap: 6px; flex-wrap: nowrap; flex: 0 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
 .stage {
-  background: transparent; border: 1px solid var(--navy-line); border-radius: 8px; padding: 5px 12px; font-size: 13px; color: var(--muted);
+  background: transparent; border: 1px solid var(--navy-line); border-radius: 8px; padding: 5px 10px; font-size: 13px; color: var(--muted); white-space: nowrap;
 }
 .stage.done { border-color: rgba(255,209,102,0.5); color: var(--text); }
 .stage.on { background: var(--accent); color: var(--ink); border-color: var(--accent); font-weight: 700; }
-.transport { display: flex; align-items: center; gap: 8px; }
+.transport { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .tbtn { background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; width: 36px; height: 32px; display: grid; place-items: center; color: var(--text); }
 .tbtn:hover { border-color: var(--accent); }
 .tbtn-play { background: var(--accent); color: var(--ink); border-color: var(--accent); }
-.scrub { flex: 1; accent-color: var(--accent); }
+.scrub { flex: 1; min-width: 60px; accent-color: var(--accent); }
 .tval { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
 .ctl-auto { margin: 0 6px 0 2px; white-space: nowrap; }
 .ctl-auto input { accent-color: var(--accent); }
-.chip-skip { margin-left: 4px; }
 
 /* ---- 뷰포트 시점 도구 ---- */
 #viewtools { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; z-index: 5; }
@@ -194,12 +196,12 @@ body.projector .sp-texnote { font-size: 16px; }
 .popover-close:hover { border-color: var(--accent); color: var(--text); }
 
 /* ---- 스크롤바 (UI 톤에 맞춤) ---- */
-#side, .picker-menu, .controls, .popover { scrollbar-width: thin; scrollbar-color: #3a4f7a transparent; }
-#side::-webkit-scrollbar, .picker-menu::-webkit-scrollbar, .controls::-webkit-scrollbar, .popover::-webkit-scrollbar { width: 8px; height: 6px; }
-#side::-webkit-scrollbar-track, .picker-menu::-webkit-scrollbar-track, .controls::-webkit-scrollbar-track, .popover::-webkit-scrollbar-track { background: transparent; }
-#side::-webkit-scrollbar-thumb, .picker-menu::-webkit-scrollbar-thumb, .controls::-webkit-scrollbar-thumb, .popover::-webkit-scrollbar-thumb { background: #3a4f7a; border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+#side, .picker-menu, .controls, .popover, .stages { scrollbar-width: thin; scrollbar-color: #3a4f7a transparent; }
+#side::-webkit-scrollbar, .picker-menu::-webkit-scrollbar, .controls::-webkit-scrollbar, .popover::-webkit-scrollbar, .stages::-webkit-scrollbar { width: 8px; height: 6px; }
+#side::-webkit-scrollbar-track, .picker-menu::-webkit-scrollbar-track, .controls::-webkit-scrollbar-track, .popover::-webkit-scrollbar-track, .stages::-webkit-scrollbar-track { background: transparent; }
+#side::-webkit-scrollbar-thumb, .picker-menu::-webkit-scrollbar-thumb, .controls::-webkit-scrollbar-thumb, .popover::-webkit-scrollbar-thumb, .stages::-webkit-scrollbar-thumb { background: #3a4f7a; border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 #side::-webkit-scrollbar-thumb:hover, .picker-menu::-webkit-scrollbar-thumb:hover { background: #4f68a0; border: 2px solid transparent; background-clip: padding-box; }
-.util-slot { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; }
+.util-slot { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; flex: 0 0 auto; }
 .utils { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ---- 툴팁 ---- */

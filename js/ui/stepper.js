@@ -1,6 +1,6 @@
 // © 2026 김용현
 // ui/stepper.js — 단계 버튼 + 스크러버 + 재생 (PLAN 7장). 모든 단계는 버튼 재생과 슬라이더 스크럽 둘 다 지원한다.
-import { getState, subscribe, timeline, timelineIndex, goTo, next, prev, setT, togglePlay, play, setState, stageLabel, derivation, canAdjust } from '../state.js';
+import { getState, subscribe, timeline, timelineIndex, goTo, next, prev, setT, togglePlay, setState, stageLabel, derivation } from '../state.js';
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -33,9 +33,8 @@ export function mountStepper(container) {
   autoInput.title = '한 단계가 끝나면 다음 단계를 이어서 재생';
   autoInput.addEventListener('change', () => setState({ autoplay: autoInput.checked }));
   auto.append(autoInput, el('span', 'ctl-label', '자동 재생'));
-  const skip = el('button', 'chip chip-skip', '조정 단계부터 보기'); skip.type = 'button';
   const utilSlot = el('span', 'util-slot');
-  transport.append(bRew, bPrev, bPlay, bNext, auto, scrub, tval, skip, utilSlot);
+  transport.append(bRew, bPrev, bPlay, bNext, auto, scrub, tval, utilSlot);
   bar.append(stages, transport);
   container.appendChild(bar);
 
@@ -44,7 +43,6 @@ export function mountStepper(container) {
   bPlay.addEventListener('click', () => togglePlay());
   bRew.addEventListener('click', () => goTo('flat', 0, 0, false));
   scrub.addEventListener('input', () => setT(parseInt(scrub.value, 10) / 1000));
-  skip.addEventListener('click', () => goTo('adjust', 0, 0, false));
 
   window.addEventListener('keydown', (ev) => {
     if (ev.target && /input|select|textarea/i.test(ev.target.tagName) && ev.target.type !== 'range') return;
@@ -83,7 +81,6 @@ export function mountStepper(container) {
     tval.textContent = s.stage === 'flat' ? '—' : `${Math.round(s.t * 100)}%`;
     bPlay.innerHTML = s.playing ? ICON.pause : ICON.play;
     if (autoInput.checked !== !!s.autoplay) autoInput.checked = !!s.autoplay;
-    skip.style.display = canAdjust() && s.stage !== 'adjust' ? '' : 'none';
   }
   subscribe(render);
   render(getState());
