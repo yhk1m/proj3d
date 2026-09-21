@@ -22,7 +22,7 @@ export function mountStepper(container) {
   const stages = el('div', 'stages');
   const transport = el('div', 'transport');
   const bPrev = el('button', 'tbtn'); bPrev.innerHTML = ICON.prev; bPrev.title = '이전 단계 (←)';
-  const bRew = el('button', 'tbtn'); bRew.innerHTML = ICON.rewind; bRew.title = '역방향 재생';
+  const bRew = el('button', 'tbtn'); bRew.innerHTML = ICON.rewind; bRew.title = '맨 처음으로 (펼친 종이)';
   const bPlay = el('button', 'tbtn tbtn-play'); bPlay.innerHTML = ICON.play; bPlay.title = '재생/일시정지 (스페이스)';
   const bNext = el('button', 'tbtn'); bNext.innerHTML = ICON.next; bNext.title = '다음 단계 (→)';
   const scrub = el('input', 'scrub'); scrub.type = 'range'; scrub.min = 0; scrub.max = 1000; scrub.step = 1; scrub.value = 0;
@@ -34,14 +34,14 @@ export function mountStepper(container) {
   autoInput.addEventListener('change', () => setState({ autoplay: autoInput.checked }));
   auto.append(autoInput, el('span', 'ctl-label', '자동 재생'));
   const skip = el('button', 'chip chip-skip', '조정 단계부터 보기'); skip.type = 'button';
-  transport.append(bPrev, bRew, bPlay, bNext, auto, scrub, tval, skip);
+  transport.append(bRew, bPrev, bPlay, bNext, auto, scrub, tval, skip);
   bar.append(stages, transport);
   container.appendChild(bar);
 
   bPrev.addEventListener('click', () => prev());
   bNext.addEventListener('click', () => next(true));
   bPlay.addEventListener('click', () => togglePlay());
-  bRew.addEventListener('click', () => play(-1));
+  bRew.addEventListener('click', () => goTo('flat', 0, 0, false));
   scrub.addEventListener('input', () => setT(parseInt(scrub.value, 10) / 1000));
   skip.addEventListener('click', () => goTo('adjust', 0, 0, false));
 
