@@ -17,7 +17,7 @@ import { Rays } from './scene/rays.js';
 import { Tissot } from './scene/tissot.js';
 import { CameraRig } from './scene/camera.js';
 import { mountPicker } from './ui/picker.js';
-import { mountControls } from './ui/controls.js';
+import { mountControls, mountUtilControls } from './ui/controls.js';
 import { mountStepper } from './ui/stepper.js';
 import { mountSidePanel } from './ui/sidePanel.js';
 import { CompareOverlay, AreaRatio } from './ui/compare.js';
@@ -120,10 +120,11 @@ async function main() {
 
   // ---- UI ----
   mountPicker(document.getElementById('picker'));
-  mountControls(document.getElementById('controls'), {
+  mountControls(document.getElementById('controls'));
+  const { utilSlot } = mountStepper(document.getElementById('stepper'));
+  mountUtilControls(utilSlot, {
     onFullscreen: () => { if (document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); },
   });
-  mountStepper(document.getElementById('stepper'));
   const side = mountSidePanel(document.getElementById('side'));
   const tooltip = document.getElementById('tooltip');
   const { fitBtn } = mountViewTools(viewport, rig);

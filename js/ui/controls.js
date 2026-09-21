@@ -13,8 +13,9 @@ function el(tag, cls, text) {
   return e;
 }
 
-function slider({ label, min, max, step, value, format, onInput }) {
+function slider({ label, title, min, max, step, value, format, onInput }) {
   const wrap = el('label', 'ctl ctl-slider');
+  if (title) wrap.title = title;
   const name = el('span', 'ctl-label', label);
   const out = el('span', 'ctl-value', format(value));
   const input = el('input');
@@ -78,7 +79,7 @@ function toggle({ label, checked, onChange, cls = '' }) {
   return wrap;
 }
 
-export function mountControls(container, { onFullscreen } = {}) {
+export function mountControls(container) {
   let renderedKey = null;
   const box = el('div', 'controls');
   container.appendChild(box);
@@ -86,7 +87,7 @@ export function mountControls(container, { onFullscreen } = {}) {
   function render(s) {
     const e = entry(), root = rootEntry(e), type = surfaceType();
     const locks = new Set([...(e.lockParams || []), ...(root.lockParams || [])]);
-    const key = [s.projection, type, s.aspect, s.compare, s.tissot, s.autoplay, s.lowPower, s.projector, JSON.stringify(s.params, (k, v) => (v === Infinity ? 'inf' : v))].join('|');
+    const key = [s.projection, type, s.aspect, s.compare, s.tissot, JSON.stringify(s.params, (k, v) => (v === Infinity ? 'inf' : v))].join('|');
     if (key === renderedKey) return;
     renderedKey = key;
     box.innerHTML = '';
@@ -104,28 +105,28 @@ export function mountControls(container, { onFullscreen } = {}) {
 
     // 표준위선 / 광원
     if (type === 'cylinder' && !locks.has('phi0')) {
-      const sl = slider({ label: '표준위선 φ₀', min: 0, max: 80, step: 1, value: Math.round((s.params.phi0 || 0) / D), format: (v) => `${v}°${v === 0 ? ' (접선)' : ' (할선)'}`, onInput: (v) => setParam('phi0', v * D) });
+      const sl = slider({ label: 'φ₀', title: '표준위선 φ₀ — 0° 접선, 그 외 할선(원통 반지름 cos φ₀)', min: 0, max: 80, step: 1, value: Math.round((s.params.phi0 || 0) / D), format: (v) => `${v}°${v === 0 ? ' 접선' : ' 할선'}`, onInput: (v) => setParam('phi0', v * D) });
       box.appendChild(sl);
     }
     if (type === 'cone') {
       const secant = s.params.phi2 != null;
       const phi1 = Math.round((s.params.phi1 ?? 40 * D) / D);
-      const tg = toggle({ label: secant ? '할선 (표준위선 2개)' : '접선 (표준위선 1개)', checked: secant, onChange: (on) => setParam('phi2', on ? Math.min(85, phi1 + 20) * D : null) });
+      const tg = toggle({ label: secant ? '할선' : '접선', checked: secant, onChange: (on) => setParam('phi2', on ? Math.min(85, phi1 + 20) * D : null) });
+      tg.title = secant ? '할선 원뿔 — 표준위선 2개' : '접선 원뿔 — 표준위선 1개 (체크하면 할선)';
       box.appendChild(tg);
-      const s1 = slider({ label: secant ? '표준위선 φ₁' : '표준위선 φ₀', min: 0, max: 90, step: 1, value: phi1, format: (v) => `${v}°`, onInput: (v) => {
+      const s1 = slider({ label: secant ? 'φ₁' : 'φ₀', title: '표준위선 — 90° = 평면, 0° = 원통 (세 가전면은 한 가족)', min: 0, max: 90, step: 1, value: phi1, format: (v) => `${v}°`, onInput: (v) => {
         setParam('phi1', v * D);
         if (s.params.phi2 != null && s.params.phi2 / D < v + 1) setParam('phi2', Math.min(90, v + 1) * D);
       } });
       box.appendChild(s1);
       if (secant) {
-        const s2 = slider({ label: '표준위선 φ₂', min: 1, max: 90, step: 1, value: Math.round(s.params.phi2 / D), format: (v) => `${v}°`, onInput: (v) => setParam('phi2', Math.max(v, phi1 + 1) * D) });
+        const s2 = slider({ label: 'φ₂', title: '두 번째 표준위선', min: 1, max: 90, step: 1, value: Math.round(s.params.phi2 / D), format: (v) => `${v}°`, onInput: (v) => setParam('phi2', Math.max(v, phi1 + 1) * D) });
         box.appendChild(s2);
       }
-      box.appendChild(el('span', 'ctl-hint', '90° = 평면, 0° = 원통'));
     }
     if (type === 'plane' && !locks.has('d')) {
       const d = s.params.d ?? 0;
-      const sl = slider({ label: '광원 위치 d', min: 0, max: 1, step: 0.01, value: d === Infinity ? 1 : d, format: (v) => (d === Infinity ? '∞ (정사)' : v === 0 ? '0 (심사)' : v >= 0.995 ? '1 (평사)' : v.toFixed(2)), onInput: (v) => setParam('d', v) });
+      const sl = slider({ label: '광원 d', title: '광원 위치 — 0 지구 중심(심사), 1 대척점(평사), ∞ 평행광(정사)', min: 0, max: 1, step: 0.01, value: d === Infinity ? 1 : d, format: (v) => (d === Infinity ? '∞ 정사' : v === 0 ? '0 심사' : v >= 0.995 ? '1 평사' : v.toFixed(2)), onInput: (v) => setParam('d', v) });
       if (d === Infinity) sl.input.disabled = true;
       const inf = el('button', 'chip' + (d === Infinity ? ' on' : ''), '무한대');
       inf.type = 'button';
@@ -160,7 +161,22 @@ export function mountControls(container, { onFullscreen } = {}) {
     cmp.appendChild(sel);
     box.appendChild(cmp);
 
-    // 화면 (자동 재생은 하단 재생 버튼 옆, stepper.js)
+  }
+
+  subscribe(render);
+  render(getState());
+}
+
+/** 유틸 버튼(저사양·프로젝터·링크 복사) — 하단 재생 줄 오른쪽에 둔다(헤더가 두 줄이 되지 않게). */
+export function mountUtilControls(container, { onFullscreen } = {}) {
+  let renderedKey = null;
+  const box = el('span', 'utils');
+  container.appendChild(box);
+  function render(s) {
+    const key = [s.lowPower, s.projector].join('|');
+    if (key === renderedKey) return;
+    renderedKey = key;
+    box.innerHTML = '';
     box.appendChild(toggle({ label: '저사양', checked: s.lowPower, onChange: (v) => setState({ lowPower: v }), cls: 'ctl-minor' }));
     const proj = el('button', 'chip' + (s.projector ? ' on' : ''), '프로젝터');
     proj.type = 'button';
@@ -175,7 +191,6 @@ export function mountControls(container, { onFullscreen } = {}) {
     });
     box.appendChild(share);
   }
-
   subscribe(render);
   render(getState());
 }

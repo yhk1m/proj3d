@@ -34,7 +34,8 @@ export function mountStepper(container) {
   autoInput.addEventListener('change', () => setState({ autoplay: autoInput.checked }));
   auto.append(autoInput, el('span', 'ctl-label', '자동 재생'));
   const skip = el('button', 'chip chip-skip', '조정 단계부터 보기'); skip.type = 'button';
-  transport.append(bRew, bPrev, bPlay, bNext, auto, scrub, tval, skip);
+  const utilSlot = el('span', 'util-slot');
+  transport.append(bRew, bPrev, bPlay, bNext, auto, scrub, tval, skip, utilSlot);
   bar.append(stages, transport);
   container.appendChild(bar);
 
@@ -86,4 +87,5 @@ export function mountStepper(container) {
   }
   subscribe(render);
   render(getState());
+  return { utilSlot };
 }
