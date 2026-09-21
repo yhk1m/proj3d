@@ -33,19 +33,22 @@ export class Rays {
     this.lines.frustumCulled = false;
     this.lines.renderOrder = 10;
 
-    // 내핵: 발광 구 + PointLight + 빌보드 글로우
-    this.core = new THREE.Mesh(new THREE.SphereGeometry(0.08, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe9a8 }));
-    this.core.renderOrder = 10;
+    // 내핵: 발광 구 + PointLight + 빌보드 글로우. 광원은 항상 보여야 하므로 깊이 검사를 끄고 맨 위에 그린다.
+    this.core = new THREE.Mesh(new THREE.SphereGeometry(0.08, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, depthTest: false, depthWrite: false }));
+    this.core.renderOrder = 12;
     this.light = new THREE.PointLight(0xffd166, 0, 6, 1.5);
     this.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffd166, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
-    this.glow.scale.set(0.9, 0.9, 1);
-    this.glow.renderOrder = 11;
-    // 축 광원(axisOrthogonal)용 발광 막대
-    this.rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.0, 12), new THREE.MeshBasicMaterial({ color: 0xffe9a8 }));
+    this.glow.scale.set(1.1, 1.1, 1);
+    this.glow.renderOrder = 13;
+    // 선광원(axisOrthogonal): 지축 전체가 광원 — 발광 막대 + 가산 글로우 통
+    this.rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.0, 12), new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, depthTest: false, depthWrite: false }));
     this.rod.visible = false;
-    this.rod.renderOrder = 10;
+    this.rod.renderOrder = 12;
+    this.rodGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.04, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+    this.rodGlow.visible = false;
+    this.rodGlow.renderOrder = 13;
     this.coreGroup = new THREE.Group();
-    this.coreGroup.add(this.core, this.light, this.glow, this.rod);
+    this.coreGroup.add(this.core, this.light, this.glow, this.rod, this.rodGlow);
     this.group.add(this.lines, this.coreGroup);
     this._p = [0, 0, 0]; this._P = [0, 0, 0]; this._L = [0, 0, 0];
     this.setPoints([]);
@@ -59,11 +62,15 @@ export class Rays {
     this.geometry.setAttribute('position', this.posAttr);
   }
 
-  /** ctx: pipeline 컨텍스트, intensity 0~1 */
-  update(ctx, intensity) {
+  /**
+   * ctx: pipeline 컨텍스트, intensity 0~1 (광원 밝기), raysOn: 광선을 그릴지(빛 투영 단계에서만)
+   * 광원(내핵·막대)은 씌우기 단계부터 어둡게 보이다가 빛 투영에서 완전히 켜진다.
+   */
+  update(ctx, intensity, raysOn = true) {
     const light = ctx.light, surface = ctx.surface;
     const axis = light && light.type === 'axisOrthogonal';
     this.rod.visible = axis;
+    this.rodGlow.visible = axis;
     this.core.visible = !axis;
     this.glow.visible = !axis;
     if (!axis) {
@@ -73,9 +80,13 @@ export class Rays {
       this.coreGroup.position.set(0, 0, 0);
     }
     this.light.intensity = 2.5 * intensity;
+    this.core.material.opacity = 0.35 + 0.65 * intensity;
+    this.glow.material.opacity = 0.4 + 0.6 * intensity;
+    this.rod.material.opacity = 0.35 + 0.65 * intensity;
+    this.rodGlow.material.opacity = 0.15 + 0.3 * intensity;
     this.material.opacity = 0.6 * intensity;
-    this.glow.material.opacity = intensity;
-    this.lines.visible = intensity > 0;
+    this.lines.visible = raysOn && intensity > 0;
+    if (!this.lines.visible) return;
 
     const pos = this.pos, p = this._p, P = this._P, L = this._L;
     let o = 0;

@@ -6,7 +6,13 @@ import { ROBINSON_TABLE } from '../projections/robinsonTable.js';
 import { winkelEquirectComponent, stepProjection, endOfStep } from '../projections/derivations.js';
 import { aitoff, mollweide, goodeHomolosine, GOODE_LOBES_DEG, HOMOLOSINE_PHI } from '../projections/adjusted.js';
 import { ENTRY_NOTES, STEP_NOTES, SYMBOLS } from './formulaNotes.js';
-import { getState, subscribe, frame, caption, entry, rootEntry, derivation, STAGE_LABELS } from '../state.js';
+import { getState, subscribe, frame, caption, entry, rootEntry, derivation, STAGE_LABELS, lightDescription } from '../state.js';
+
+const LIGHT_ICONS = {
+  point: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2.5" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21.5" y2="12"/><line x1="5.3" y1="5.3" x2="7.8" y2="7.8"/><line x1="16.2" y1="16.2" x2="18.7" y2="18.7"/><line x1="5.3" y1="18.7" x2="7.8" y2="16.2"/><line x1="16.2" y1="7.8" x2="18.7" y2="5.3"/></svg>',
+  line: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="2.5" x2="12" y2="21.5" stroke-width="2.6"/><line x1="14.5" y1="6" x2="20" y2="6"/><line x1="14.5" y1="12" x2="21" y2="12"/><line x1="14.5" y1="18" x2="20" y2="18"/><line x1="9.5" y1="6" x2="4" y2="6"/><line x1="9.5" y1="12" x2="3" y2="12"/><line x1="9.5" y1="18" x2="4" y2="18"/></svg>',
+  parallel: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="18" y2="6"/><line x1="3" y1="12" x2="18" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/><polyline points="15 3 18 6 15 9"/><polyline points="15 9 18 12 15 15"/><polyline points="15 15 18 18 15 21"/></svg>',
+};
 
 const D = Math.PI / 180;
 
@@ -224,6 +230,13 @@ export function mountSidePanel(container) {
   head.append(title, chips);
   const stageTitle = el('div', 'sp-stage');
   const cap = el('p', 'sp-caption');
+  const lightBox = el('div', 'sp-light');
+  const lightIcon = el('div', 'sp-light-icon');
+  const lightBody = el('div', 'sp-light-body');
+  const lightTitle = el('div', 'sp-light-title');
+  const lightText = el('div', 'sp-light-text');
+  lightBody.append(lightTitle, lightText);
+  lightBox.append(lightIcon, lightBody);
   const badge = el('div', 'sp-badge');
   const texWrap = el('div', 'sp-texwrap');
   const tex = el('div', 'sp-tex');
@@ -251,7 +264,7 @@ export function mountSidePanel(container) {
   const link = el('a', null, 'https://bgnl.kr');
   link.href = 'https://bgnl.kr'; link.target = '_blank'; link.rel = 'noopener';
   copy.appendChild(link);
-  root.append(head, stageTitle, cap, badge, texWrap, panel, readout, copy);
+  root.append(head, stageTitle, cap, lightBox, badge, texWrap, panel, readout, copy);
   container.appendChild(root);
 
   // 패널 요소들
@@ -309,6 +322,17 @@ export function mountSidePanel(container) {
     if (fr.stepInfo) stageTitle.textContent = `${STAGE_LABELS.adjust} — ${fr.stepInfo.titleKo}`;
     else stageTitle.textContent = STAGE_LABELS[s.stage] + (s.stage !== 'flat' && s.stage !== 'adjust' ? ` — ${r.nameKo}` : '');
     cap.textContent = caption();
+    // 광원 설명: 빛 투영과 관련된 단계(조정 전)에만
+    const ld = s.stage !== 'adjust' ? lightDescription() : null;
+    if (ld) {
+      lightBox.style.display = '';
+      lightBox.classList.toggle('on', s.stage === 'project');
+      lightIcon.innerHTML = LIGHT_ICONS[ld.kind] || LIGHT_ICONS.point;
+      lightTitle.textContent = ld.titleKo;
+      lightText.textContent = ld.textKo;
+    } else {
+      lightBox.style.display = 'none';
+    }
     const badgeText = fr.stepInfo && fr.stepInfo.badgeKo;
     badge.textContent = badgeText || '';
     badge.style.display = badgeText ? '' : 'none';

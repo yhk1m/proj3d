@@ -232,15 +232,21 @@ async function main() {
     tissot.visible = showMap && s.tissot;
     if (tissot.visible) tissot.update(ctx);
 
-    // 광선·광원: 빛 단계에 켜고 펼치기(평면은 투영이 끝나는 순간)에 끈다
-    let rayI = 0;
-    if (s.stage === 'project') rayI = plane && projectDone ? 0 : 1;
-    else if (s.stage === 'unroll') rayI = Math.max(0, 1 - s.t * 2.5);
+    // 광원: 씌우기 단계부터 어둡게 보이고(어디서 빛이 나올지), 빛 투영에서 완전히 켜지고, 펼치기(평면은 투영이 끝나는 순간)에 꺼진다.
+    // 광선은 빛 투영 단계에만 그린다.
+    let rayI = 0, raysOn = false;
+    if (s.stage === 'wrap') rayI = 0.45 * Math.min(1, s.t * 3);
+    else if (s.stage === 'project') { rayI = plane && projectDone ? 0 : 1; raysOn = true; }
+    else if (s.stage === 'unroll') { rayI = Math.max(0, 1 - s.t * 2.5); raysOn = true; }
     rays.group.visible = rayI > 0;
-    if (rayI > 0) rays.update(ctx, rayI);
+    if (rayI > 0) rays.update(ctx, rayI, raysOn);
 
-    // 지구본은 빛 단계에 반투명(0.35), 종이도 빛 단계에 반투명(0.5) — 안쪽 광원과 광선이 보이게
-    globe.setOpacity(s.stage === 'project' ? (plane && projectDone ? 1 : 1 - 0.65 * Math.min(1, s.t * 3)) : s.stage === 'unroll' ? 0.35 + 0.65 * Math.min(1, s.t * 2) : 1);
+    // 지구본: 씌우기 0.8(안쪽 광원이 비침), 빛 단계 0.35. 종이도 빛 단계에 반투명(0.5) — 안쪽 광원과 광선이 보이게
+    globe.setOpacity(
+      s.stage === 'wrap' ? 1 - 0.2 * Math.min(1, s.t * 3)
+        : s.stage === 'project' ? (plane && projectDone ? 1 : 0.8 - 0.45 * Math.min(1, s.t * 3))
+          : s.stage === 'unroll' ? 0.35 + 0.65 * Math.min(1, s.t * 2) : 1,
+    );
     paperOpacityTarget = s.stage === 'project' ? (plane && projectDone ? 1 : 0.5) : s.stage === 'unroll' ? 0.5 + 0.5 * Math.min(1, s.t / 0.3) : 1;
 
     if (fr.moveP < 1) {

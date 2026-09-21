@@ -52,7 +52,8 @@ export class CameraRig {
     const mn = [Math.min(-1, box.min[0] + off.x), Math.min(-1, box.min[1] + off.y), Math.min(-1, box.min[2] + off.z)];
     const mx = [Math.max(1, box.max[0] + off.x), Math.max(1, box.max[1] + off.y), Math.max(1, box.max[2] + off.z)];
     const c3 = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
-    const dir3 = plane ? [0.85, 0.55, 0.8] : [0.36, 0.28, 1];
+    // 평면: 광원이 축 위 접점 반대쪽(대척점·무한원)에 있을 수 있으므로 옆에서 보아 광원·지구본·원판이 한눈에 들어오게
+    const dir3 = plane ? [0.9, 0.5, 0.55] : [0.36, 0.28, 1];
     const n3 = Math.hypot(...dir3);
     const dz = [dir3[0] / n3, dir3[1] / n3, dir3[2] / n3];            // 카메라 → 대상 반대 방향(프레임 좌표)
     const upHint = Math.abs(dz[1]) > 0.9 ? [0, 0, -1] : [0, 1, 0];
