@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { positionOf, makeGridParam } from '../geometry/pipeline.js';
 import { buildGridTopology, scatterTriangles, fixLobeSeams, cutEdgeLines } from '../geometry/mesh.js';
+import { getState } from '../state.js';
 
 export { buildGridTopology, scatterTriangles };
 
@@ -22,9 +23,29 @@ export class Paper {
     this.posAttr.setUsage(THREE.DynamicDrawUsage);
     this.geometry.setAttribute('position', this.posAttr);
     this.material = new THREE.MeshLambertMaterial({
-      color: 0xf4eedc, side: THREE.DoubleSide,
+      color: 0xf4eedc, side: THREE.DoubleSide, emissive: 0xede3c9, emissiveIntensity: 0.07,
       polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
     });
+    // 위치 계산은 그대로 두고 색만 조절. UV는 종이의 도메인 격자에 붙어 움직인다.
+    const paperUV = new Float32Array(this.topo.tris.length * 2);
+    for (let i = 0; i < this.topo.tris.length; i++) {
+      const k = this.topo.tris[i];
+      paperUV[2 * i] = this.topo.uv[2 * k];
+      paperUV[2 * i + 1] = this.topo.uv[2 * k + 1];
+    }
+    this.geometry.setAttribute('uv', new THREE.BufferAttribute(paperUV, 2));
+    this.material.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPaperUV;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPaperUV = uv;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vPaperUV;')
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          float grain = fract(sin(dot(floor(vPaperUV * 1200.0), vec2(127.1, 311.7))) * 43758.5453);
+          float edge = min(min(vPaperUV.x, 1.0 - vPaperUV.x), min(vPaperUV.y, 1.0 - vPaperUV.y));
+          diffuseColor.rgb *= (0.975 + 0.025 * grain) * mix(0.95, 1.0, smoothstep(0.0, 0.018, edge));
+          if (!gl_FrontFacing) diffuseColor.rgb *= vec3(0.92, 0.90, 0.85);
+        `);
+    };
+    this.material.customProgramCacheKey = () => 'paper-grain-v1';
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 1;
@@ -62,6 +83,11 @@ export class Paper {
 
   /** ctx: pipeline 컨텍스트. 종이는 항상 s = 1(구면과 섞지 않음). */
   update(ctx) {
+    // 빛 단계에서 종이 자체의 f와 B_t는 고정이다(s는 지도에만 적용). 재계산할 필요가 없다.
+    const state = getState();
+    const key = state.stage === 'project' ? JSON.stringify([state.projection, ctx.surface, ctx.params, ctx.domain, ctx.bendT]) : null;
+    if (key !== null && this._shapeKey === key) return;
+    this._shapeKey = key;
     const paperCtx = { ...ctx, s: 1 };
     const param = makeGridParam(ctx.domain);
     const { uv, tris, count } = this.topo;

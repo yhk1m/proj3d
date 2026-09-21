@@ -5,6 +5,8 @@
 import * as THREE from 'three';
 import { positionOf, makeGridParam } from '../geometry/pipeline.js';
 import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../geometry/mesh.js';
+import { getState } from '../state.js';
+import { lightPosition } from '../projections/perspective.js';
 
 export const INK = new THREE.Color(0x1b2a4a);
 export const RAY = new THREE.Color(0xffd166);
@@ -15,12 +17,27 @@ const LIFT_GRID = 0.002, LIFT_LINE = 0.004;
 const GRID_VERT = /* glsl */ `
   attribute vec3 geo;
   attribute float arrive;
+  attribute vec3 paperNormal;
+  attribute vec2 travel;
+  uniform bool flight;
+  uniform float reach;
   varying vec3 vGeo;
   varying float vArrive;
   void main() {
     vGeo = geo;
     vArrive = arrive;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec3 pos = position;
+    if (flight && dot(geo, geo) > 0.5) {
+      // PLAN 10.5: CPU pipeline의 두 끝점 + 거리 attribute. pipeline.positionOf의 s_v와 동일.
+      float sv = travel.y - travel.x > 1e-9
+        ? clamp((reach - travel.x) / (travel.y - travel.x), 0.0, 1.0)
+        : step(travel.y, reach);
+      vec3 n = mix(geo, paperNormal, sv);
+      n /= max(length(n), 1e-9);
+      pos = mix(geo, position - paperNormal * 0.002, sv) + n * 0.002;
+      vArrive = sv;
+    }
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
 
@@ -42,9 +59,10 @@ const GRID_FRAG = /* glsl */ `
     float land = texture2D(landMask, uv).r;
     if (land < 0.5) discard;
     if (vArrive < 0.01) discard;                 // 빛의 앞머리가 아직 지나지 않은 곳은 그리지 않는다(지구본이 이미 보여준다)
-    float a = smoothstep(0.85, 1.0, vArrive);
-    vec3 col = mix(rayColor, landColor, a);
-    gl_FragColor = vec4(col, opacity * mix(0.5, 1.0, a) * smoothstep(0.01, 0.12, vArrive));
+    float a = smoothstep(0.80, 1.0, vArrive);
+    float contact = smoothstep(0.65, 0.87, vArrive) * (1.0 - smoothstep(0.90, 1.0, vArrive));
+    vec3 col = mix(rayColor, landColor, a) + vec3(0.38, 0.23, 0.07) * contact;
+    gl_FragColor = vec4(col, opacity * mix(0.48, 1.0, a) * smoothstep(0.01, 0.12, vArrive));
   }
 `;
 
@@ -92,8 +110,11 @@ export class LineLayer {
         let x = 0, y = 0, z = 0, r = 0, g = 0, b = 0;
         if (ok) {
           x = p[0] + n[0] * this.lift; y = p[1] + n[1] * this.lift; z = p[2] + n[2] * this.lift;
-          const a = sv < 0.85 ? 0 : sv >= 1 ? 1 : (sv - 0.85) / 0.15;
+          const ink = Math.max(0, Math.min(1, (sv - 0.80) / 0.20));
+          const a = ink * ink * (3 - 2 * ink);
           r = c0.r + (c1.r - c0.r) * a; g = c0.g + (c1.g - c0.g) * a; b = c0.b + (c1.b - c0.b) * a;
+          const contact = Math.sin(Math.PI * ink) * 0.35;
+          r += contact; g += contact * 0.7; b += contact * 0.25;
         }
         if (i > 0) {
           if (ok && vok) {
@@ -124,6 +145,8 @@ export class LandGrid {
       landColor: { value: INK.clone() },
       rayColor: { value: RAY.clone() },
       opacity: { value: 0.82 },
+      flight: { value: false },
+      reach: { value: 0 },
     };
     this.material = new THREE.ShaderMaterial({
       uniforms: this.uniforms, vertexShader: GRID_VERT, fragmentShader: GRID_FRAG,
@@ -154,32 +177,59 @@ export class LandGrid {
     this.gridGeo = new Float32Array(n * 3);
     this.gridLatLon = new Float64Array(n * 2);
     this.gridArr = new Float32Array(n);
+    this.gridNormal = new Float32Array(n * 3);
+    this.gridTravel = new Float32Array(n * 2);
     const tn = this.topo.tris.length;
     this.triPos = new Float32Array(tn * 3);
     this.triGeo = new Float32Array(tn * 3);
     this.triArr = new Float32Array(tn);
+    this.triNormal = new Float32Array(tn * 3);
+    this.triTravel = new Float32Array(tn * 2);
     this.geometry.setAttribute('position', new THREE.BufferAttribute(this.triPos, 3).setUsage(THREE.DynamicDrawUsage));
     this.geometry.setAttribute('geo', new THREE.BufferAttribute(this.triGeo, 3).setUsage(THREE.DynamicDrawUsage));
     this.geometry.setAttribute('arrive', new THREE.BufferAttribute(this.triArr, 1).setUsage(THREE.DynamicDrawUsage));
+    this.geometry.setAttribute('paperNormal', new THREE.BufferAttribute(this.triNormal, 3));
+    this.geometry.setAttribute('travel', new THREE.BufferAttribute(this.triTravel, 2));
   }
 
   update(ctx) {
+    const state = getState();
+    const flight = state.stage === 'project' && ctx.s < 1 && !ctx.domain.cuts;
+    this.uniforms.flight.value = flight;
+    this.uniforms.reach.value = ctx.s * ctx.rayReach;
+    const key = flight ? JSON.stringify([state.projection, ctx.surface, ctx.params, ctx.domain, ctx.bendT, this.lowPower]) : null;
+    if (flight && this._flightKey === key && this.kind !== null) return;
+    this._flightKey = key;
+    // 좌표의 원본은 gridLatLon. 이 버퍼는 빛 단계 동안만 재사용하는 pipeline의 GPU 끝점 attribute.
+    const evalCtx = flight ? { ...ctx, s: 1 } : ctx;
+    const lightPoint = [0, 0, 0], spherePoint = [0, 0, 0];
     const param = makeGridParam(ctx.domain);
     this._ensureGrid(param.kind);
     const { uv, tris, count } = this.topo;
     const gp = this.gridPos, gg = this.gridGeo, gl = this.gridLatLon, ga = this.gridArr, g = this._g, p = this._p, n = this._n;
     for (let k = 0; k < count; k++) {
       param.toGeo(uv[2 * k], uv[2 * k + 1], g);
-      const sv = positionOf(ctx, g[0], g[1], p, n);
+      const sv = positionOf(evalCtx, g[0], g[1], p, n);
       gp[3 * k] = p[0] + n[0] * LIFT_GRID; gp[3 * k + 1] = p[1] + n[1] * LIFT_GRID; gp[3 * k + 2] = p[2] + n[2] * LIFT_GRID;
       const cp = Math.cos(g[1]);
       gg[3 * k] = cp * Math.sin(g[0]); gg[3 * k + 1] = Math.sin(g[1]); gg[3 * k + 2] = cp * Math.cos(g[0]);
       gl[2 * k] = g[0]; gl[2 * k + 1] = g[1];
       ga[k] = sv;
+      if (flight) {
+        this.gridNormal.set(n, 3 * k);
+        spherePoint[0] = cp * Math.sin(g[0]); spherePoint[1] = Math.sin(g[1]); spherePoint[2] = cp * Math.cos(g[0]);
+        lightPosition(ctx.light, ctx.surface, spherePoint, lightPoint);
+        this.gridTravel[2 * k] = Math.hypot(spherePoint[0] - lightPoint[0], spherePoint[1] - lightPoint[1], spherePoint[2] - lightPoint[2]);
+        this.gridTravel[2 * k + 1] = Math.hypot(p[0] - lightPoint[0], p[1] - lightPoint[1], p[2] - lightPoint[2]);
+      }
     }
     scatterTriangles(gp, tris, this.triPos, [
       { src: gg, dst: this.triGeo, n: 3 },
       { src: ga, dst: this.triArr, n: 1 },
+      ...(flight ? [
+        { src: this.gridNormal, dst: this.triNormal, n: 3 },
+        { src: this.gridTravel, dst: this.triTravel, n: 2 },
+      ] : []),
     ]);
     const cuts = ctx.domain.cuts || null;
     if (cuts) {
@@ -191,6 +241,10 @@ export class LandGrid {
     this.geometry.attributes.position.needsUpdate = true;
     this.geometry.attributes.geo.needsUpdate = true;
     this.geometry.attributes.arrive.needsUpdate = true;
+    if (flight) {
+      this.geometry.attributes.paperNormal.needsUpdate = true;
+      this.geometry.attributes.travel.needsUpdate = true;
+    }
   }
 }
 

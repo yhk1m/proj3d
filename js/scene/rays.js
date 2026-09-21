@@ -2,6 +2,9 @@
 // scene/rays.js — 광원·광선 (PLAN 8.3). 경위선 15° 교점에서만 광선을 그린다(최대 약 300개).
 // 광선의 끝점은 pipeline.positionOf 가 주는 정점 위치(빛의 앞머리)와 같다. s 만 읽는다.
 import * as THREE from 'three';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { paperPosition } from '../geometry/pipeline.js';
 import { unitVector } from '../geometry/rotate.js';
 import { lightPosition, PARALLEL_LIGHT_DIST } from '../projections/perspective.js';
@@ -25,20 +28,28 @@ export class Rays {
   constructor() {
     this.group = new THREE.Group();
     this.points = [];
-    this.geometry = new THREE.BufferGeometry();
-    this.material = new THREE.LineBasicMaterial({
-      color: RAY_COLOR, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false,
+    this.geometry = new LineSegmentsGeometry();
+    this.material = new LineMaterial({
+      color: 0xffe7a3, linewidth: 2.2, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false,
     });
-    this.lines = new THREE.LineSegments(this.geometry, this.material);
+    this.lines = new LineSegments2(this.geometry, this.material);
     this.lines.frustumCulled = false;
     this.lines.renderOrder = 10;
+    // 같은 pipeline 끝점 버퍼를 두 번 그린다. 화면 공간 굵기만 다르며 광선 길이는 바꾸지 않는다.
+    this.haloMaterial = new LineMaterial({
+      color: RAY_COLOR, linewidth: 7, transparent: true, opacity: 0.1,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    this.halo = new LineSegments2(this.geometry, this.haloMaterial);
+    this.halo.frustumCulled = false;
+    this.halo.renderOrder = 9;
 
     // 내핵: 발광 구 + PointLight + 빌보드 글로우. 광원은 항상 보여야 하므로 깊이 검사를 끄고 맨 위에 그린다.
     this.core = new THREE.Mesh(new THREE.SphereGeometry(0.08, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, depthTest: false, depthWrite: false }));
     this.core.renderOrder = 12;
     this.light = new THREE.PointLight(0xffd166, 0, 6, 1.5);
     this.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffd166, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
-    this.glow.scale.set(1.1, 1.1, 1);
+    this.glow.scale.set(1.35, 1.35, 1);
     this.glow.renderOrder = 13;
     // 선광원(axisOrthogonal): 지축 전체가 광원 — 발광 막대 + 가산 글로우 통
     this.rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.0, 12), new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, depthTest: false, depthWrite: false }));
@@ -53,7 +64,7 @@ export class Rays {
     this.plate.renderOrder = 12;
     this.coreGroup = new THREE.Group();
     this.coreGroup.add(this.core, this.light, this.glow, this.rod, this.rodGlow, this.plate);
-    this.group.add(this.lines, this.coreGroup);
+    this.group.add(this.halo, this.lines, this.coreGroup);
     this._p = [0, 0, 0]; this._P = [0, 0, 0]; this._L = [0, 0, 0];
     this.setPoints([]);
   }
@@ -61,9 +72,14 @@ export class Rays {
   /** points: 프레임 좌표 [λ', φ'] 배열 */
   setPoints(points) {
     this.points = points;
-    this.pos = new Float32Array(points.length * 6);
-    this.posAttr = new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage);
-    this.geometry.setAttribute('position', this.posAttr);
+    this.geometry.dispose();
+    this.geometry = new LineSegmentsGeometry();
+    this.geometry.setPositions(new Float32Array(Math.max(1, points.length) * 6));
+    this.geometry.instanceCount = points.length;
+    this.posAttr = this.geometry.attributes.instanceStart.data;
+    this.posAttr.setUsage(THREE.DynamicDrawUsage);
+    this.pos = this.posAttr.array;
+    this.lines.geometry = this.halo.geometry = this.geometry;
   }
 
   /**
@@ -93,8 +109,10 @@ export class Rays {
     this.rod.material.opacity = 0.35 + 0.65 * intensity;
     this.rodGlow.material.opacity = 0.15 + 0.3 * intensity;
     this.plate.material.opacity = 0.15 + 0.3 * intensity;
-    this.material.opacity = 0.6 * intensity;
+    this.material.opacity = 0.64 * intensity;
+    this.haloMaterial.opacity = 0.1 * intensity;
     this.lines.visible = raysOn && intensity > 0;
+    this.halo.visible = this.lines.visible;
     if (!this.lines.visible) return;
 
     // 광선은 광원 L 에서 빛의 앞머리(reach = s·rayReach)까지만 자란다. 앞머리가 구면 점 P 를 지나면

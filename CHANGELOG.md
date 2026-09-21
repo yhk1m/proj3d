@@ -1,5 +1,52 @@
 # CHANGELOG
 
+## 2026-09-21 — 단계 C 시각 연출 (`visual-polish`, Codex)
+
+`9b06b1e`에서 새로 clone한 `proj3d-astra`의 로컬 브랜치에서 작업. 원격 push 없음. 기존 `projection3d` 작업본의 파일 수정 없음. **시각 구현과 수치 검증 완료, 실제 프로젝터 60fps 승인 조건은 미확인**.
+
+### 바꾼 파일과 요약
+
+| 파일 | 변경 |
+|---|---|
+| `js/scene/rays.js` | 1px LineSegments → 화면 공간 2.2px 중심선 + 7px 약한 가산 글로우. 두 LineSegments2가 하나의 끝점 버퍼를 공유. 매 프레임 재할당 없음. 내핵 글로우 크기 1.1 → 1.35. `paperPosition` 호출과 기존 L→Q 앞머리 계산은 유지. |
+| `js/scene/paper.js` | 미색 Lambert 재질에 약한 자체 발광, 미세한 절차적 종이 결, 뒷면 색 구분과 가장자리 음영. 위치 변형 없음. 빛 단계에서는 s와 무관한 종이 형태의 중복 갱신 생략. 도법·매개변수·도메인·굽힘이 바뀌면 재계산. |
+| `js/scene/mapLayer.js` | 도달부의 밝은 띠와 smoothstep 잉크 전환 강화. PLAN 10.5 방식으로 빛 단계 육지 격자의 보간을 GPU로 이동: CPU pipeline이 종이 끝점·법선을 계산하고 광원 거리 attribute를 전달, 셰이더는 같은 s_v와 lerp만 수행. 원본 경위도 보관 유지. 씌우기·펼치기·수학 조정·절개는 기존 CPU pipeline 사용. 저사양 전환 시 버퍼 재생성. |
+| `js/scene/camera.js` | 지구본이 축소되며 뒤쪽 여유 공간 → 왼쪽 경계 밖 → 종이 앞면 → 좌측 상단으로 이동. 위치의 직선 감쇠 대신 경로 진행도 감쇠로 모서리 지름길 방지. 카메라 방향과 거리를 별도로 보간하고 중간 자세의 종이 경계 상자를 맞춰 원뿔 전환 시 잘림 완화. |
+| `screenshots/*.png` | 원본/변경 후 광선, 원뿔 펼치기, 평행광, 구드 최종 지도, 93/93 검증 통과 캡처. |
+| `CHANGELOG.md` | 이번 변경·비교 방법·검증·성능 한계 기록. |
+
+Frontend-design 스킬의 색·재질·움직임 지침을 기존 네이비/미색/따뜻한 노랑 안에서 적용. UI·자막·상태 연결 변경 없음. `js/projections/`, `js/geometry/`, `js/state.js`, `tests/`, `js/ui/`, `main.js`, 의존성 명세 모두 변경 없음.
+
+### 비교 포인트
+
+아래 경로는 새 작업본 서버 `http://127.0.0.1:8766/` 기준. `instant=1`은 정지 화면 비교용이며 실제 이동 경로는 이 옵션 없이 재생/역재생으로 확인.
+
+| 화면 | 확인할 변화 | 캡처 |
+|---|---|---|
+| `?p=mercator&stage=project&t=0.72&instant=1` | 광선 중심선 두께, 옅은 외곽 글로우, 고위도에 도달하는 금빛 띠 | [변경 전](screenshots/rays-before.png), [변경 후](screenshots/rays-after.png) |
+| `?p=centralConic&stage=unroll&t=0.72&instant=1` | 부채꼴 전체가 화면 안에 들어오는 중간 구도와 좌측으로 우회하는 지구본 | [원뿔 펼치기](screenshots/cone-unroll.png) |
+| `?p=orthographic&stage=project&t=0.60&instant=1` | 평행광의 굵기·직선성, 종이에 닿기 전 이동 중인 지도 | [평행광](screenshots/parallel-rays.png) |
+| `?p=goodeHomolosine&stage=adjust&step=2&t=1&instant=1&tissot=1` | 완성된 종이의 미색·잉크 대비, 절개선과 티소 유지 | [구드 최종](screenshots/goode-final.png) |
+
+변경 전 광선 캡처는 이 clone의 원본 커밋 `9b06b1e`를 ignored `node_modules/visual-baseline/`에 풀어 같은 서버에서 촬영. 처음 접속한 8765 응답은 기존 서버와 충돌해 최종 비교 근거에서 제외. `npm run serve` 실행 후 충돌을 확인해 새 서버만 종료하고, 동일한 Python HTTP 서버를 8766에서 실행. 기존 서버는 그대로 둠.
+
+### 검증
+
+- `npm.cmd install` 완료(취약점 0), `npm.cmd test`: **93/93 통과**. Windows PowerShell 실행 정책 때문에 npm.ps1 대신 npm.cmd 사용.
+- `http://127.0.0.1:8766/tests/verify.html`: **93 / 93 통과 — 전 항목 통과**. [통과 화면](screenshots/verify-93.png).
+- 빛 도법 6종 × 경위도 표본 × 진행도 5개, 총 5,700개에 대해 Float32 끝점 attribute 기반 보간식과 `pipeline.positionOf` 비교: 최대 위치 차이 **2.2244e-7** (허용 1e-5). 이는 보간식·속성 정밀도 비교이며 실제 GPU transform-feedback 테스트는 아님.
+- 원통 점광원, 평면 평행광, 사축 람베르트 선광원+저사양, 원뿔 펼치기, 구드 절개+티소 화면 점검. JS 구문 검사와 `git diff --check` 통과. 임시 성능 계측 코드는 제거.
+
+### 성능 / 다음 작업자에게
+
+- 측정 조건: Chrome, CSS viewport 1920×1080, DPR 약 1, ANGLE / AMD Radeon 780M / D3D11. 임시 계측으로 실제 프레임 간격(`performance.now`)과 CPU 지도 갱신 시간을 분리 측정.
+- GPU 보간 적용 뒤 메르카토르 빛 단계의 지도 갱신(해안선·경위선 포함): 초기 준비 프레임을 뺀 **64개 표본 평균 4.56ms, p95 5.90ms**. 종이 재갱신은 캐시 적중 시 계측 해상도에서 0ms. 전체 렌더 비용을 뜻하지 않음.
+- **60fps는 통과로 판정하지 않음.** 이 자동화 세션에서는 정지 화면도 약 1.88fps, 투영 재생은 최적화 전 약 3.02fps/후 약 3.11fps, 프레임 간격 약 330ms. 창 가림/브라우저 스케줄링 제한이 의심되지만 원인 확정은 못 함. 실제 프로젝터·앞에 열린 Chrome에서 전체 단계 재측정 필요.
+- 씌우기·펼치기·수학 조정의 B_t는 CPU 경로를 유지. 실제 환경에서 이 구간이 16.7ms를 넘으면 PLAN 10.5에 따라 해당 구간도 두 끝점 attribute + 동일 B_t 셰이더로 옮길 것. `main.js`는 종이 CPU `gridPos`로 경계/카메라를 맞추므로 GPU 전환 시 그 계약도 유지해야 함(범위 확대가 필요하면 먼저 협의).
+- 극단 매개변수·모든 축 조합에서의 지구본/종이 충돌을 자동 판정한 것은 아님. 원통·원뿔·평면 대표 구도에서 우회 경로를 확인했고, 매개변수 변경 직후의 전환도 실제 재생 환경에서 추가 점검 권장.
+
+![93개 수치 검증 통과](screenshots/verify-93.png)
+
 ## 2026-09-21 (2차) — 사용자 피드백 반영 + M6 구드 호몰로사인
 
 브라우저에서 직접 보며 받은 요청을 반영했다. `npm test` / `tests/verify.html` **93 / 93 통과**.

@@ -30,6 +30,12 @@ export class CameraRig {
     this._normalWorld = new THREE.Vector3();
     this._upFlat = new THREE.Vector3();
     this._worldUp = new THREE.Vector3(0, 1, 0);
+    this._globeProgress = 0;
+    this._globeTarget = 0;
+    this._globeExit = new THREE.Vector3();
+    this._globeBack = new THREE.Vector3();
+    this._globeCorner = new THREE.Vector3();
+    this._globeDock = new THREE.Vector3();
     controls.addEventListener('start', () => { this.autoFrame = false; });
   }
 
@@ -134,10 +140,48 @@ export class CameraRig {
     this.frameToWorld(normal, this._normalWorld);
     if (Math.abs(this._normalWorld.y) > 0.9) this.frameToWorld(upF, this._upFlat); else this._upFlat.copy(this._worldUp);
     d.up.copy(this._worldUp).lerp(this._upFlat, wf).normalize();
+    if (wf > 0 && wf < 1) {
+      // 반대 방향의 두 카메라 위치를 직선 보간하면 종이에 가까워져 가장자리가 잘린다.
+      // 시선 방향과 거리를 따로 보간하고, 중간 자세의 종이 경계 상자까지 화면 안에 맞춘다.
+      const direction = this._v.set(...lerp3(dz, normal, wf)).normalize();
+      const up = d.up.clone().applyQuaternion(this._qInv);
+      const rightAxis = new THREE.Vector3().crossVectors(up, direction).normalize();
+      const upAxis = new THREE.Vector3().crossVectors(direction, rightAxis);
+      const center = lerp3(c3, look, wf);
+      let distance = dist3 + (distF - dist3) * wf;
+      for (const x of [box.min[0] + off.x, box.max[0] + off.x]) {
+        for (const y of [box.min[1] + off.y, box.max[1] + off.y]) {
+          for (const z of [box.min[2] + off.z, box.max[2] + off.z]) {
+            const point = new THREE.Vector3(x - center[0], y - center[1], z - center[2]);
+            const depth = point.dot(direction);
+            distance = Math.max(distance, Math.abs(point.dot(rightAxis)) / tanH * 1.08 + depth,
+              Math.abs(point.dot(upAxis)) / tanV * 1.08 + depth);
+          }
+        }
+      }
+      this.frameToWorld([center[0] + direction.x * distance, center[1] + direction.y * distance,
+        center[2] + direction.z * distance], d.pos);
+    }
 
-    // 지구본: 정면 자세에 가까워지면 좌측 상단으로
-    if (wf > 0.6) { this.frameToWorld(gF, d.globePos); d.globeScale = gs; }
-    else { d.globePos.set(0, 0, 0); d.globeScale = 1; }
+    // 뒤쪽 여유 공간 → 왼쪽 가장자리 밖 → 앞면. 곡면이 남은 상태에서도 측면을 가로지르지 않는다.
+    // 위치 자체를 감쇠하면 우회 경로의 모서리를 가로지르므로 진행도 하나만 감쇠한다.
+    this._globeTarget = smooth((wf - 0.2) / 0.8);
+    const exitX = Math.min(box.min[0] - 0.55, gF[0]);
+    const back = Math.min(-0.45, box.min[cone ? 1 : 2] - 0.55);
+    this.frameToWorld([0, normal[1] * back, normal[2] * back], this._globeBack);
+    this.frameToWorld([exitX, normal[1] * back, normal[2] * back], this._globeCorner);
+    this.frameToWorld([exitX, gF[1], gF[2]], this._globeExit);
+    this.frameToWorld(gF, this._globeDock);
+    this._poseGlobe(this._globeTarget);
+  }
+
+  _poseGlobe(progress) {
+    const p = this.desired.globePos;
+    if (progress < 0.25) p.copy(this._globeBack).multiplyScalar(smooth(progress / 0.25));
+    else if (progress < 0.55) p.copy(this._globeBack).lerp(this._globeCorner, smooth((progress - 0.25) / 0.30));
+    else if (progress < 0.90) p.copy(this._globeCorner).lerp(this._globeExit, smooth((progress - 0.55) / 0.35));
+    else p.copy(this._globeExit).lerp(this._globeDock, smooth((progress - 0.90) / 0.10));
+    this.desired.globeScale = 1 - 0.68 * smooth(progress / 0.25);
   }
 
   /** 매 프레임. 자동 추적 중이면 카메라를, 항상 지구본을 목표로 감쇠 보간한다. */
@@ -149,15 +193,18 @@ export class CameraRig {
       ctl.target.lerp(d.target, k);
       cam.up.lerp(d.up, k).normalize();
     }
-    const kg = this.instant ? 1 : 1 - Math.exp(-2.6 * dt);
-    this.globeGroup.position.lerp(d.globePos, kg);
-    const sc = this.globeGroup.scale.x + (d.globeScale - this.globeGroup.scale.x) * kg;
-    this.globeGroup.scale.setScalar(sc);
+    const kg = this.instant ? 1 : 1 - Math.exp(-4.5 * dt);
+    this._globeProgress += (this._globeTarget - this._globeProgress) * kg;
+    this._poseGlobe(this._globeProgress);
+    this.globeGroup.position.copy(d.globePos);
+    this.globeGroup.scale.setScalar(d.globeScale);
   }
 
   /** 즉시 목표 자세로 (첫 화면) */
   snap() {
     const d = this.desired;
+    this._globeProgress = this._globeTarget;
+    this._poseGlobe(this._globeProgress);
     this.camera.position.copy(d.pos);
     this.controls.target.copy(d.target);
     this.camera.up.copy(d.up);
