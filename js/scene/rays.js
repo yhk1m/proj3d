@@ -2,7 +2,7 @@
 // scene/rays.js — 광원·광선 (PLAN 8.3). 경위선 15° 교점에서만 광선을 그린다(최대 약 300개).
 // 광선의 끝점은 pipeline.positionOf 가 주는 정점 위치(빛의 앞머리)와 같다. s 만 읽는다.
 import * as THREE from 'three';
-import { positionOf } from '../geometry/pipeline.js';
+import { paperPosition } from '../geometry/pipeline.js';
 import { unitVector } from '../geometry/rotate.js';
 import { lightPosition, PARALLEL_LIGHT_DIST } from '../projections/perspective.js';
 
@@ -97,15 +97,21 @@ export class Rays {
     this.lines.visible = raysOn && intensity > 0;
     if (!this.lines.visible) return;
 
-    const pos = this.pos, p = this._p, P = this._P, L = this._L;
+    // 광선은 광원 L 에서 빛의 앞머리(reach = s·rayReach)까지만 자란다. 앞머리가 구면 점 P 를 지나면
+    // 정점이 P → Q 로 움직이는데, 그 위치가 곧 광선 끝이다(pipeline.positionOf 와 같은 규칙).
+    const pos = this.pos, q = this._p, P = this._P, L = this._L;
+    const reach = ctx.s >= 1 ? Infinity : ctx.s * ctx.rayReach;
     let o = 0;
     for (const [l, ph] of this.points) {
-      positionOf(ctx, l, ph, p);
-      if (Number.isNaN(p[0])) { for (let k = 0; k < 6; k++) pos[o + k] = 0; o += 6; continue; }
+      paperPosition(ctx, l, ph, q);
+      if (Number.isNaN(q[0])) { for (let k = 0; k < 6; k++) pos[o + k] = 0; o += 6; continue; }
       unitVector(l, ph, P);
       lightPosition(light, surface, P, L);
+      const dx = q[0] - L[0], dy = q[1] - L[1], dz = q[2] - L[2];
+      const len = Math.hypot(dx, dy, dz) || 1;
+      const k = Math.min(1, reach / len);
       pos[o] = L[0]; pos[o + 1] = L[1]; pos[o + 2] = L[2];
-      pos[o + 3] = p[0]; pos[o + 4] = p[1]; pos[o + 5] = p[2];
+      pos[o + 3] = L[0] + dx * k; pos[o + 4] = L[1] + dy * k; pos[o + 5] = L[2] + dz * k;
       o += 6;
     }
     this.posAttr.needsUpdate = true;

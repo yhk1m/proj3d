@@ -41,9 +41,10 @@ const GRID_FRAG = /* glsl */ `
     vec2 uv = vec2(lam / 6.28318530718 + 0.5, phi / 3.14159265359 + 0.5);
     float land = texture2D(landMask, uv).r;
     if (land < 0.5) discard;
+    if (vArrive < 0.01) discard;                 // 빛의 앞머리가 아직 지나지 않은 곳은 그리지 않는다(지구본이 이미 보여준다)
     float a = smoothstep(0.85, 1.0, vArrive);
     vec3 col = mix(rayColor, landColor, a);
-    gl_FragColor = vec4(col, opacity * mix(0.5, 1.0, a));
+    gl_FragColor = vec4(col, opacity * mix(0.5, 1.0, a) * smoothstep(0.01, 0.12, vArrive));
   }
 `;
 
@@ -86,7 +87,8 @@ export class LineLayer {
     for (const line of this.lines) {
       for (let i = 0; i < line.length; i += 2) {
         const sv = positionOf(ctx, line[i], line[i + 1], p, n);
-        const ok = !Number.isNaN(p[0]);
+        // 빛의 앞머리가 아직 지나지 않은 정점(sv = 0)은 구면 위에 있으므로 그리지 않는다
+        const ok = !Number.isNaN(p[0]) && sv > 1e-6;
         let x = 0, y = 0, z = 0, r = 0, g = 0, b = 0;
         if (ok) {
           x = p[0] + n[0] * this.lift; y = p[1] + n[1] * this.lift; z = p[2] + n[2] * this.lift;
