@@ -30,14 +30,14 @@ export class Rays {
     this.points = [];
     this.geometry = new LineSegmentsGeometry();
     this.material = new LineMaterial({
-      color: 0xffe7a3, linewidth: 2.2, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false,
+      color: RAY_COLOR, vertexColors: true, linewidth: 2.2, transparent: true, opacity: 0.48, blending: THREE.AdditiveBlending, depthWrite: false,
     });
     this.lines = new LineSegments2(this.geometry, this.material);
     this.lines.frustumCulled = false;
     this.lines.renderOrder = 10;
     // 같은 pipeline 끝점 버퍼를 두 번 그린다. 화면 공간 굵기만 다르며 광선 길이는 바꾸지 않는다.
     this.haloMaterial = new LineMaterial({
-      color: RAY_COLOR, linewidth: 7, transparent: true, opacity: 0.1,
+      color: RAY_COLOR, vertexColors: true, linewidth: 7, transparent: true, opacity: 0.045,
       blending: THREE.AdditiveBlending, depthWrite: false,
     });
     this.halo = new LineSegments2(this.geometry, this.haloMaterial);
@@ -75,6 +75,10 @@ export class Rays {
     this.geometry.dispose();
     this.geometry = new LineSegmentsGeometry();
     this.geometry.setPositions(new Float32Array(Math.max(1, points.length) * 6));
+    // 광원 쪽의 겹침은 어둡게, 같은 끝점을 향해 밝게. 위치·길이는 변경하지 않는다.
+    const colors = new Float32Array(Math.max(1, points.length) * 6);
+    for (let i = 0; i < colors.length; i += 6) colors.set([0.18, 0.18, 0.18, 1, 1, 1], i);
+    this.geometry.setColors(colors);
     this.geometry.instanceCount = points.length;
     this.posAttr = this.geometry.attributes.instanceStart.data;
     this.posAttr.setUsage(THREE.DynamicDrawUsage);
@@ -105,12 +109,12 @@ export class Rays {
     }
     this.light.intensity = 2.5 * intensity;
     this.core.material.opacity = 0.35 + 0.65 * intensity;
-    this.glow.material.opacity = 0.4 + 0.6 * intensity;
+    this.glow.material.opacity = 0.25 + 0.35 * intensity;
     this.rod.material.opacity = 0.35 + 0.65 * intensity;
-    this.rodGlow.material.opacity = 0.15 + 0.3 * intensity;
-    this.plate.material.opacity = 0.15 + 0.3 * intensity;
-    this.material.opacity = 0.64 * intensity;
-    this.haloMaterial.opacity = 0.1 * intensity;
+    this.rodGlow.material.opacity = 0.10 + 0.18 * intensity;
+    this.plate.material.opacity = 0.08 + 0.20 * intensity;
+    this.material.opacity = 0.48 * intensity;
+    this.haloMaterial.opacity = 0.045 * intensity;
     this.lines.visible = raysOn && intensity > 0;
     this.halo.visible = this.lines.visible;
     if (!this.lines.visible) return;

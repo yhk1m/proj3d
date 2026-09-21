@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## 2026-09-21 — 단계 C 후속: 종이 질감과 시각적 우선순위
+
+사용자 요청에 따라 종이 질감 강화와 디자인 개선 1~4번을 모두 적용. 기존 `visual-polish` 브랜치에서만 작업하며 push 없음.
+
+| 바꾼 파일 | 변경과 비교 포인트 |
+|---|---|
+| `js/scene/paper.js` | 단일 미세 노이즈 대신 펄프 얼룩·비스듬한 섬유·미세 결을 겹친 절차적 질감. 종이의 넓은 빈 영역에서 질감이 드러나도록 색 변화를 강화. 화면보다 작은 결은 fwidth로 평균화해 축소 시 반짝임 억제. 외부 텍스처·추가 메시·정점 변형 없음. |
+| `js/scene/rays.js` | 광원 쪽 정점색은 18%, 끝점은 100%로 보간해 광원 부근 중첩 과노출 완화. 중심선 불투명도 0.64→0.48, 글로우 0.10→0.045. 내핵·선광원·평행광 원판의 글로우도 감소. 2.2px 굵기와 pipeline 끝점 유지. |
+| `js/scene/mapLayer.js` | 육지 채움만 청회색 `#536b80`로 변경. 해안선은 기존 네이비 잉크로 유지해 채움·해안선·경위선 구분 강화. |
+| `css/style.css` | 도법명/배지보다 현재 단계·핵심 자막이 먼저 보이도록 크기·간격·대비 조절. 상세 광원 설명은 차분한 배경과 보조 텍스트 색. 단계/재생/유틸 묶음 사이 간격·구분선, 큰 재생 버튼, 활성 단계 밑줄, 키보드 포커스 표시. 프로젝터 버튼/숫자 확대. 860px 이하에서는 재생부 줄바꿈. |
+| `screenshots/polish-v2-paper-ui.png`, `screenshots/polish-v2-light.png`, `screenshots/verify-93-v2.png` | 이번 변경의 종이·UI, 평행광, 검증 통과 캡처. |
+| `CHANGELOG.md` | 변경·검증 기록. |
+
+Frontend-design 지침을 기존 네이비·미색·금빛 팔레트와 수업용 가독성에 맞춰 적용. 자막 문구와 UI 상태 연결 로직 변경 없음. 수학·geometry·state·tests·main 파일 변경 없음.
+
+- 종이/지도/UI 비교: `http://127.0.0.1:8766/?p=mercator&stage=unroll&t=1&instant=1&projector=1` — [화면](screenshots/polish-v2-paper-ui.png).
+- 과노출 비교: `http://127.0.0.1:8766/?p=orthographic&stage=project&t=0.6&instant=1` — [이전](screenshots/parallel-rays.png), [개선](screenshots/polish-v2-light.png). 하단 광원 원판의 하얀 뭉침과 광선의 색 분리 확인.
+- `npm.cmd test`, `tests/verify.html` 모두 **93/93 통과**. JS 구문·diff 공백 검사 통과.
+- 1920×1080 프로젝터 모드에서 가로 넘침 없음, 하단 버튼 높이 범위 정상. 390×844에서 재생부가 370px 폭 안에서 줄바꿈하며 화면 안에 위치함을 확인. 실제 투사 환경의 가독성과 60fps는 이전 절의 미확인 사항 유지; 이번 질감 변경 후 전체 FPS는 재측정하지 않음.
+
+![후속 변경 93/93 통과](screenshots/verify-93-v2.png)
+
 ## 2026-09-21 — 단계 C 시각 연출 (`visual-polish`, Codex)
 
 `9b06b1e`에서 새로 clone한 `proj3d-astra`의 로컬 브랜치에서 작업. 원격 push 없음. 기존 `projection3d` 작업본의 파일 수정 없음. **시각 구현과 수치 검증 완료, 실제 프로젝터 60fps 승인 조건은 미확인**.

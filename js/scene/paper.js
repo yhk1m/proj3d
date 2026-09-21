@@ -37,15 +37,30 @@ export class Paper {
     this.material.onBeforeCompile = (shader) => {
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPaperUV;')
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPaperUV = uv;');
-      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vPaperUV;')
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
+        varying vec2 vPaperUV;
+        float paperHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float paperNoise(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(paperHash(i), paperHash(i + vec2(1.0, 0.0)), f.x),
+            mix(paperHash(i + vec2(0.0, 1.0)), paperHash(i + vec2(1.0, 1.0)), f.x), f.y);
+        }
+      `)
         .replace('#include <color_fragment>', `#include <color_fragment>
-          float grain = fract(sin(dot(floor(vPaperUV * 1200.0), vec2(127.1, 311.7))) * 43758.5453);
+          // 큰 펄프 얼룩 + 긴 섬유 + 미세 결. 화면보다 작은 결은 평균으로 수렴시켜 반짝임 억제.
+          float pulp = paperNoise(vPaperUV * vec2(65.0, 48.0));
+          float fiber = paperNoise(vec2(vPaperUV.x + vPaperUV.y * 0.35, vPaperUV.y - vPaperUV.x * 0.15) * vec2(270.0, 120.0));
+          vec2 grainUV = vPaperUV * 1000.0;
+          float grain = mix(paperNoise(grainUV), 0.5, smoothstep(0.5, 1.8, max(fwidth(grainUV.x), fwidth(grainUV.y))));
           float edge = min(min(vPaperUV.x, 1.0 - vPaperUV.x), min(vPaperUV.y, 1.0 - vPaperUV.y));
-          diffuseColor.rgb *= (0.975 + 0.025 * grain) * mix(0.95, 1.0, smoothstep(0.0, 0.018, edge));
+          diffuseColor.rgb *= (0.88 + 0.10 * pulp + 0.055 * fiber + 0.045 * grain)
+            * mix(0.93, 1.0, smoothstep(0.0, 0.018, edge));
+          diffuseColor.rgb += vec3(0.012, 0.006, 0.0) * pulp;
           if (!gl_FrontFacing) diffuseColor.rgb *= vec3(0.92, 0.90, 0.85);
         `);
     };
-    this.material.customProgramCacheKey = () => 'paper-grain-v1';
+    this.material.customProgramCacheKey = () => 'paper-fibers-v2';
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 1;

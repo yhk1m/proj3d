@@ -91,20 +91,20 @@ button { cursor: pointer; }
 #side { border-left: 1px solid var(--navy-line); background: var(--navy); overflow: auto; }
 .fatal { position: absolute; inset: 0; display: grid; place-items: center; color: var(--warn); }
 
-.side-panel { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.side-panel { padding: 22px 20px 16px; display: flex; flex-direction: column; gap: 16px; min-height: 100%; }
 .sp-copy { margin-top: auto; padding-top: 14px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--navy-line); }
 .sp-copy a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .sp-copy a:hover { color: var(--accent); }
-.sp-title { margin: 0; font-size: 18px; font-weight: 700; }
+.sp-title { margin: 0; font-size: 17px; font-weight: 600; color: #c5d0e1; }
 .sp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .chip-i { font-size: 11px; color: var(--muted); border: 1px solid var(--navy-line); border-radius: 999px; padding: 1px 8px; }
-.sp-stage { color: var(--accent); font-weight: 600; font-size: 13px; }
-.sp-caption { margin: 0; font-size: 14px; line-height: 1.65; word-break: keep-all; }
-.sp-light { display: flex; gap: 10px; align-items: flex-start; background: var(--panel); border-radius: 8px; padding: 8px 10px; border: 1px solid transparent; }
-.sp-light.on { border-color: rgba(255,209,102,0.55); }
+.sp-stage { color: var(--accent); font-weight: 700; font-size: 15px; padding-top: 16px; border-top: 1px solid var(--navy-line); }
+.sp-caption { margin: 0; font-size: 18px; font-weight: 500; line-height: 1.7; letter-spacing: -0.025em; word-break: keep-all; color: #f4f1e7; }
+.sp-light { display: flex; gap: 10px; align-items: flex-start; background: rgba(12,24,46,0.28); border-radius: 8px; padding: 12px; border: 1px solid var(--navy-line); }
+.sp-light.on { border-color: rgba(255,209,102,0.22); }
 .sp-light-icon { color: var(--accent); flex: 0 0 auto; margin-top: 1px; }
-.sp-light-title { font-weight: 600; font-size: 13px; color: var(--accent); margin-bottom: 2px; }
-.sp-light-text { font-size: 12.5px; line-height: 1.55; color: var(--text); word-break: keep-all; }
+.sp-light-title { font-weight: 600; font-size: 13px; color: #ded5b7; margin-bottom: 6px; }
+.sp-light-text { font-size: 13px; line-height: 1.7; color: var(--muted); word-break: keep-all; }
 body.projector .sp-light-text { font-size: 16px; }
 body.projector .sp-light-title { font-size: 17px; }
 .sp-badge { display: inline-block; align-self: flex-start; background: rgba(126,224,168,0.15); color: var(--ok); border: 1px solid rgba(126,224,168,0.5); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
@@ -146,18 +146,19 @@ body.projector .sp-texnote { font-size: 16px; }
 #stepper { border-top: 1px solid var(--navy-line); background: var(--navy); }
 /* 한 줄 리모컨: [단계 버튼들][◁◁ |◁ ▶ ▷|][자동 재생][진행바(남는 폭)][%][유틸] */
 #stepper { min-width: 0; overflow: hidden; }
-.stepper { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 8px 14px; min-width: 0; }
+.stepper { display: flex; flex-direction: row; align-items: center; gap: 20px; padding: 12px 16px; min-width: 0; }
 .stages { display: flex; gap: 6px; flex-wrap: nowrap; flex: 0 1 auto; min-width: 0; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
 .stage {
-  background: transparent; border: 1px solid var(--navy-line); border-radius: 8px; padding: 5px 10px; font-size: 13px; color: var(--muted); white-space: nowrap;
+  background: transparent; border: 1px solid var(--navy-line); border-radius: 8px; padding: 8px 12px; font-size: 14px; color: var(--muted); white-space: nowrap;
 }
 .stage.done { border-color: rgba(255,209,102,0.5); color: var(--text); }
-.stage.on { background: var(--accent); color: var(--ink); border-color: var(--accent); font-weight: 700; }
+.stage.on { background: rgba(255,209,102,0.12); color: var(--accent); border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); font-weight: 700; }
 /* 남는 폭은 진행바가 차지하고, 모자라면 단계 버튼 줄이 줄어들며 스크롤된다(재생 버튼·유틸은 항상 보임) */
-.transport { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: max-content; }
-.tbtn { background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; width: 36px; height: 32px; display: grid; place-items: center; color: var(--text); }
+.transport { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: max-content; padding-left: 20px; border-left: 1px solid var(--navy-line); }
+.tbtn { background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; width: 38px; height: 40px; flex-shrink: 0; display: grid; place-items: center; color: var(--text); }
 .tbtn:hover { border-color: var(--accent); }
-.tbtn-play { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.tbtn-play { background: var(--accent); color: var(--ink); border-color: var(--accent); width: 48px; height: 44px; box-shadow: 0 3px 12px rgba(0,0,0,0.18); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .scrub { flex: 1; min-width: 60px; accent-color: var(--accent); }
 .tval { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
 .ctl-auto { margin: 0 6px 0 2px; white-space: nowrap; }
@@ -202,7 +203,7 @@ body.projector .sp-texnote { font-size: 16px; }
 #side::-webkit-scrollbar-track, .picker-menu::-webkit-scrollbar-track, .controls::-webkit-scrollbar-track, .popover::-webkit-scrollbar-track, .stages::-webkit-scrollbar-track { background: transparent; }
 #side::-webkit-scrollbar-thumb, .picker-menu::-webkit-scrollbar-thumb, .controls::-webkit-scrollbar-thumb, .popover::-webkit-scrollbar-thumb, .stages::-webkit-scrollbar-thumb { background: #3a4f7a; border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 #side::-webkit-scrollbar-thumb:hover, .picker-menu::-webkit-scrollbar-thumb:hover { background: #4f68a0; border: 2px solid transparent; background-clip: padding-box; }
-.util-slot { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; flex: 0 0 auto; }
+.util-slot { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--navy-line); flex: 0 0 auto; }
 .utils { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ---- 툴팁 ---- */
@@ -214,10 +215,14 @@ body.projector .sp-texnote { font-size: 16px; }
 
 /* ---- 프로젝터 모드: 큰 글씨, 고대비 ---- */
 body.projector { font-size: 17px; }
-body.projector .sp-caption { font-size: 20px; line-height: 1.6; }
-body.projector .sp-title { font-size: 24px; }
-body.projector .sp-stage { font-size: 16px; }
-body.projector .stage { font-size: 16px; padding: 8px 16px; }
+body.projector .sp-caption { font-size: 22px; line-height: 1.7; }
+body.projector .sp-title { font-size: 21px; }
+body.projector .sp-stage { font-size: 18px; }
+body.projector .stage { font-size: 17px; padding: 10px 16px; }
+body.projector .tbtn { width: 44px; height: 46px; }
+body.projector .tbtn-play { width: 56px; height: 50px; }
+body.projector .tbtn svg { width: 22px; height: 22px; }
+body.projector .tval { font-size: 16px; }
 body.projector .sp-tex { font-size: 18px; }
 body.projector .ctl-minor, body.projector .brand span { display: none; }
 body.projector { --muted: #D5DEEC; --navy-line: #4A5F8C; --side-w: 420px; }
@@ -232,4 +237,9 @@ body.projector { --muted: #D5DEEC; --navy-line: #4A5F8C; --side-w: 420px; }
   .picker-btn { min-width: 0; width: 100%; }
   .ctl-slider input[type="range"] { width: 90px; }
   .sp-graph { max-height: 140px; }
+  .stepper { flex-wrap: wrap; gap: 8px; padding: 8px 10px; }
+  .stages { flex: 1 1 100%; }
+  .transport { min-width: 0; flex-wrap: wrap; padding-left: 0; border-left: 0; }
+  .util-slot { margin-left: 0; padding-left: 8px; }
+  .sp-caption { font-size: 16px; }
 }

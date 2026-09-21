@@ -142,7 +142,7 @@ export class LandGrid {
     this.uniforms = {
       landMask: { value: landTexture },
       toGeo: { value: new THREE.Matrix3() },
-      landColor: { value: INK.clone() },
+      landColor: { value: new THREE.Color(0x536b80) },
       rayColor: { value: RAY.clone() },
       opacity: { value: 0.82 },
       flight: { value: false },
