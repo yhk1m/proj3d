@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { positionOf } from '../geometry/pipeline.js';
 import { unitVector } from '../geometry/rotate.js';
-import { lightPosition } from '../projections/perspective.js';
+import { lightPosition, PARALLEL_LIGHT_DIST } from '../projections/perspective.js';
 
 const RAY_COLOR = 0xffd166;
 
@@ -47,8 +47,12 @@ export class Rays {
     this.rodGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.04, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
     this.rodGlow.visible = false;
     this.rodGlow.renderOrder = 13;
+    // 평행광(정사): 먼 광원 평면 — 발광 원판
+    this.plate = new THREE.Mesh(new THREE.CircleGeometry(1.25, 48), new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+    this.plate.visible = false;
+    this.plate.renderOrder = 12;
     this.coreGroup = new THREE.Group();
-    this.coreGroup.add(this.core, this.light, this.glow, this.rod, this.rodGlow);
+    this.coreGroup.add(this.core, this.light, this.glow, this.rod, this.rodGlow, this.plate);
     this.group.add(this.lines, this.coreGroup);
     this._p = [0, 0, 0]; this._P = [0, 0, 0]; this._L = [0, 0, 0];
     this.setPoints([]);
@@ -69,13 +73,17 @@ export class Rays {
   update(ctx, intensity, raysOn = true) {
     const light = ctx.light, surface = ctx.surface;
     const axis = light && light.type === 'axisOrthogonal';
+    const parallel = light && light.type === 'point' && light.d === Infinity && surface && surface.type === 'plane';
     this.rod.visible = axis;
     this.rodGlow.visible = axis;
-    this.core.visible = !axis;
-    this.glow.visible = !axis;
-    if (!axis) {
+    this.plate.visible = parallel;
+    this.core.visible = !axis && !parallel;
+    this.glow.visible = !axis && !parallel;
+    if (parallel) {
+      this.coreGroup.position.set(0, 0, -PARALLEL_LIGHT_DIST);
+    } else if (!axis) {
       const L = lightPosition(light, surface, [0, 0, 0], this._L);
-      this.coreGroup.position.set(L[0], L[1], Math.max(L[2], -3));
+      this.coreGroup.position.set(L[0], L[1], L[2]);
     } else {
       this.coreGroup.position.set(0, 0, 0);
     }
@@ -84,6 +92,7 @@ export class Rays {
     this.glow.material.opacity = 0.4 + 0.6 * intensity;
     this.rod.material.opacity = 0.35 + 0.65 * intensity;
     this.rodGlow.material.opacity = 0.15 + 0.3 * intensity;
+    this.plate.material.opacity = 0.15 + 0.3 * intensity;
     this.material.opacity = 0.6 * intensity;
     this.lines.visible = raysOn && intensity > 0;
     if (!this.lines.visible) return;
@@ -95,7 +104,7 @@ export class Rays {
       if (Number.isNaN(p[0])) { for (let k = 0; k < 6; k++) pos[o + k] = 0; o += 6; continue; }
       unitVector(l, ph, P);
       lightPosition(light, surface, P, L);
-      pos[o] = L[0]; pos[o + 1] = L[1]; pos[o + 2] = Math.max(L[2], -3);
+      pos[o] = L[0]; pos[o + 1] = L[1]; pos[o + 2] = L[2];
       pos[o + 3] = p[0]; pos[o + 4] = p[1]; pos[o + 5] = p[2];
       o += 6;
     }

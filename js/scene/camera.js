@@ -5,6 +5,7 @@
 // 값은 state.frame() 파생값과 종이 bbox 만 읽는다. 위치 계산 파이프라인에는 손대지 않는다.
 import * as THREE from 'three';
 import { coneGeometry } from '../geometry/bend.js';
+import { PARALLEL_LIGHT_DIST } from '../projections/perspective.js';
 
 const D = Math.PI / 180;
 const smooth = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
@@ -51,9 +52,17 @@ export class CameraRig {
     // ---- 3D 자세: 지구본(반지름 1, 광원 포함) ∪ 종이 상자를 비스듬히 본다. 상자 꼭짓점을 화면 축에 투영해 꽉 채운다 ----
     const mn = [Math.min(-1, box.min[0] + off.x), Math.min(-1, box.min[1] + off.y), Math.min(-1, box.min[2] + off.z)];
     const mx = [Math.max(1, box.max[0] + off.x), Math.max(1, box.max[1] + off.y), Math.max(1, box.max[2] + off.z)];
+    // 광원도 상자에 넣는다: 평면 도법의 점광원(축 위 −d)·평행광의 광원 원판(z = −3, 반지름 1.25)
+    if (plane && fr.light && fr.light.type === 'point') {
+      const d = fr.light.d === Infinity ? PARALLEL_LIGHT_DIST : (fr.params.d === Infinity ? PARALLEL_LIGHT_DIST : (fr.params.d ?? fr.light.d));
+      const r = fr.light.d === Infinity || fr.params.d === Infinity ? 1.25 : 0.4;
+      mn[0] = Math.min(mn[0], -r); mn[1] = Math.min(mn[1], -r); mn[2] = Math.min(mn[2], -d - 0.1);
+      mx[0] = Math.max(mx[0], r); mx[1] = Math.max(mx[1], r);
+    }
     const c3 = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
     // 평면: 광원이 축 위 접점 반대쪽(대척점·무한원)에 있을 수 있으므로 옆에서 보아 광원·지구본·원판이 한눈에 들어오게
-    const dir3 = plane ? [0.9, 0.5, 0.55] : [0.36, 0.28, 1];
+    // 원뿔: 절개선(부채꼴의 두 반지름이 만나는 자리, λ' = ±180°)이 뒤쪽이라 뒤에서 보아 우산이 닫히며 두 변이 붙는 모습이 정면에 오게
+    const dir3 = plane ? [0.9, 0.5, 0.55] : cone ? [0.36, 0.3, -1] : [0.36, 0.28, 1];
     const n3 = Math.hypot(...dir3);
     const dz = [dir3[0] / n3, dir3[1] / n3, dir3[2] / n3];            // 카메라 → 대상 반대 방향(프레임 좌표)
     const upHint = Math.abs(dz[1]) > 0.9 ? [0, 0, -1] : [0, 1, 0];

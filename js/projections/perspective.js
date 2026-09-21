@@ -48,9 +48,13 @@ export function perspectiveMaxAngularDist(d) {
   return Math.acos(-Math.min(d, 1)) * (2 / 3);
 }
 
+/** 평행광(d = ∞)의 광원 평면 위치: z = −PARALLEL_LIGHT_DIST. 무한대 대신 유한한 평면에서 각 점 바로 뒤로 출발시킨다. */
+export const PARALLEL_LIGHT_DIST = 3;
+
 /**
  * 광원 위치(프레임 좌표). light = { type:'point', d } | { type:'axisOrthogonal' }
  *  point : 원통·원뿔은 원점(d = 0), 평면은 (0, 0, −d)
+ *  point, d = ∞ (평행광) : 구면 점 P 바로 뒤의 광원 평면 위 점 (P_x, P_y, −PARALLEL_LIGHT_DIST) — 광선이 모두 축과 나란함
  *  axisOrthogonal : 구면 점 P 와 같은 높이의 축 위 점 (0, P_y, 0)
  */
 export function lightPosition(light, surface, P, out = [0, 0, 0]) {
@@ -58,7 +62,8 @@ export function lightPosition(light, surface, P, out = [0, 0, 0]) {
   if (!light) return out;
   if (light.type === 'axisOrthogonal') { out[1] = P[1]; return out; }
   if (surface && surface.type === 'plane') {
-    out[2] = -(light.d === Infinity ? 1e6 : light.d);
+    if (light.d === Infinity) { out[0] = P[0]; out[1] = P[1]; out[2] = -PARALLEL_LIGHT_DIST; return out; }
+    out[2] = -light.d;
   }
   return out;
 }
