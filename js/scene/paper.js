@@ -23,7 +23,7 @@ export class Paper {
     this.posAttr.setUsage(THREE.DynamicDrawUsage);
     this.geometry.setAttribute('position', this.posAttr);
     this.material = new THREE.MeshLambertMaterial({
-      color: 0xf4eedc, side: THREE.DoubleSide, emissive: 0xede3c9, emissiveIntensity: 0.07,
+      color: 0xffffff, side: THREE.DoubleSide, emissive: 0xffffff, emissiveIntensity: 0.07,
       polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
     });
     // 위치 계산은 그대로 두고 색만 조절. UV는 종이의 도메인 격자에 붙어 움직인다.
@@ -57,10 +57,10 @@ export class Paper {
           float edge = min(min(vPaperUV.x, 1.0 - vPaperUV.x), min(vPaperUV.y, 1.0 - vPaperUV.y));
           diffuseColor.rgb *= (0.98 + detail * (0.32 * relief + 0.16 * (tooth - 0.5)))
             * mix(0.97, 1.0, smoothstep(0.0, 0.006, edge));
-          if (!gl_FrontFacing) diffuseColor.rgb *= vec3(0.92, 0.90, 0.85);
+          if (!gl_FrontFacing) diffuseColor.rgb *= 0.94;
         `);
     };
-    this.material.customProgramCacheKey = () => 'paper-dry-grain-v3';
+    this.material.customProgramCacheKey = () => 'paper-white-dry-grain-v4';
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 1;
@@ -72,7 +72,7 @@ export class Paper {
     this.edgeAttr = new THREE.BufferAttribute(this.edgePos, 3);
     this.edgeAttr.setUsage(THREE.DynamicDrawUsage);
     this.edgeGeometry.setAttribute('position', this.edgeAttr);
-    this.edge = new THREE.LineSegments(this.edgeGeometry, new THREE.LineBasicMaterial({ color: 0xc9bf9f, transparent: true, opacity: 0.9 }));
+    this.edge = new THREE.LineSegments(this.edgeGeometry, new THREE.LineBasicMaterial({ color: 0xc7ccd2, transparent: true, opacity: 0.9 }));
     this.edge.frustumCulled = false;
     this.edge.renderOrder = 2;
 
