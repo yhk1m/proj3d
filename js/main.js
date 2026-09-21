@@ -123,6 +123,33 @@ async function main() {
   mountControls(document.getElementById('controls'));
   const { utilSlot } = mountStepper(document.getElementById('stepper'));
   mountUtilControls(utilSlot);
+  const drawerUtils = document.getElementById('drawerUtils');
+  drawerUtils.parentNode.appendChild(drawerUtils);               // 컨트롤 뒤(서랍 맨 아래)로
+  mountUtilControls(drawerUtils);                                 // 모바일 서랍(햄버거)용 — 같은 상태를 구독하므로 서로 동기화됨
+
+  // ---- 모바일 햄버거 서랍 · 설명 패널 접기/펴기 ----
+  const menuBtn = document.getElementById('menuBtn');
+  const setMenu = (open) => { document.body.classList.toggle('menu-open', open); menuBtn.setAttribute('aria-expanded', String(open)); };
+  menuBtn.addEventListener('click', (ev) => { ev.stopPropagation(); setMenu(!document.body.classList.contains('menu-open')); });
+  document.addEventListener('pointerdown', (ev) => {
+    if (!document.body.classList.contains('menu-open')) return;
+    if (ev.target.closest('#controls') || ev.target.closest('#menuBtn') || ev.target.closest('.picker-menu') || ev.target.closest('.popover')) return;
+    setMenu(false);
+  });
+  window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') setMenu(false); });
+  const setSide = (collapsed) => {
+    document.body.classList.toggle('side-collapsed', collapsed);
+    try { localStorage.setItem('proj3d.sideCollapsed', collapsed ? '1' : '0'); } catch (e) { /* 저장 불가 환경 */ }
+    // 그리드 열이 바뀌므로 렌더러 크기를 다시 맞춘다(전환 애니메이션 뒤 한 번 더)
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 320);
+  };
+  document.getElementById('sideToggle').addEventListener('click', () => setSide(!document.body.classList.contains('side-collapsed')));
+  document.getElementById('sheetHandle').addEventListener('click', () => setSide(!document.body.classList.contains('side-collapsed')));
+  try { if (localStorage.getItem('proj3d.sideCollapsed') === '1') document.body.classList.add('side-collapsed'); } catch (e) { /* 무시 */ }
+  const sheetTitle = document.getElementById('sheetTitle');
+  subscribe(() => { sheetTitle.textContent = entry().nameKo; });
+  sheetTitle.textContent = entry().nameKo;
   const side = mountSidePanel(document.getElementById('side'));
   const tooltip = document.getElementById('tooltip');
   const { fitBtn } = mountViewTools(viewport, rig);

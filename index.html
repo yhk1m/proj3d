@@ -3,7 +3,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>지도 투영법 3D — 종이를 씌우고, 빛을 쏘고, 펼치고, 조정한다</title>
+<title>Projection 3D</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="고등학교 지리 수업용 지도 투영법 3D 애니메이션. 원통·원뿔·평면 종이를 지구본에 씌우고 내핵의 빛으로 투영한 뒤 펼치고, 메르카토르·로빈슨·Equal Earth 등은 수학적 조정 과정으로 보여준다.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -29,11 +29,29 @@
       <span>Projection 3D</span>
     </div>
     <div id="picker"></div>
-    <div id="controls"></div>
+    <button id="menuBtn" type="button" class="menu-btn" aria-label="메뉴" aria-expanded="false" title="설정 메뉴">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+    </button>
+    <div id="controls">
+      <div id="drawerUtils" class="drawer-utils"></div>
+    </div>
   </header>
   <main id="main">
-    <div id="viewport" aria-label="3D 뷰"></div>
-    <aside id="side"></aside>
+    <div id="viewport" aria-label="3D 뷰">
+      <button id="sideToggle" type="button" class="side-toggle" title="설명 패널 접기/펴기" aria-label="설명 패널 접기/펴기">
+        <svg class="ico-collapse" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>
+        <svg class="ico-expand" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 6 9 12 15 18"/></svg>
+        <span class="side-toggle-label">패널</span>
+      </button>
+    </div>
+    <aside id="side">
+      <button id="sheetHandle" type="button" class="sheet-handle" aria-label="설명 패널 펴기/접기">
+        <span class="sheet-grip"></span>
+        <span id="sheetTitle" class="sheet-title">설명</span>
+        <svg class="ico-collapse" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"/></svg>
+        <svg class="ico-expand" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </aside>
   </main>
   <footer id="stepper"></footer>
   <div id="tooltip" role="tooltip"></div>

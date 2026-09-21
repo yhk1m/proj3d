@@ -86,6 +86,22 @@ button { cursor: pointer; }
 .picker-compact .picker-btn { font-size: 13px; }
 .picker-compact .picker-menu { max-height: 60vh; }
 
+/* ---- 햄버거 · 패널 접기 (데스크톱 기본값) ---- */
+.menu-btn { display: none; width: 36px; height: 36px; border-radius: 6px; border: 1px solid var(--navy-line); background: transparent; color: var(--text); place-items: center; flex-shrink: 0; }
+.drawer-utils { display: none; }
+.sheet-handle { display: none; }
+.side-toggle {
+  position: absolute; top: 10px; right: 10px; z-index: 6; display: inline-flex; align-items: center; gap: 4px;
+  height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--navy-line); background: rgba(20,33,61,0.85); color: var(--muted); font-size: 12px;
+}
+.side-toggle:hover { border-color: var(--accent); color: var(--text); }
+.side-toggle .ico-expand, body.side-collapsed .side-toggle .ico-collapse { display: none; }
+body.side-collapsed .side-toggle .ico-expand { display: inline; }
+#main { transition: grid-template-columns 0.25s ease; }
+body.side-collapsed #main { grid-template-columns: 1fr 0; }
+body.side-collapsed #side { overflow: hidden; border-left: 0; }
+body.side-collapsed #side .side-panel { width: var(--side-w); }   /* 접히는 동안 글이 다시 흐르지 않게 폭 고정 */
+
 /* ---- 본문 ---- */
 #main { display: grid; grid-template-columns: 1fr var(--side-w); min-height: 0; }
 #viewport { position: relative; min-height: 0; background: var(--navy-deep); }
@@ -264,17 +280,66 @@ body.projector #topbar button, body.projector #stepper button { font-size: 16px;
 #topbar .picker-item.on { background: rgba(255,209,102,0.15); }
 
 @media (max-width: 860px) {
-  body { font-size: 13px; }
-  #main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-  #side { border-left: 0; border-top: 1px solid var(--navy-line); max-height: 38vh; }
-  .side-panel { padding: 10px 14px 16px; }
-  .picker { flex: 1; }
+  body { font-size: 13px; --tool-height: 34px; }
+  /* 헤더: 브랜드 아이콘 · 도법 선택 · 햄버거 */
+  #topbar { padding: 6px 10px; gap: 8px; }
+  .brand span { display: none; }
+  .picker { flex: 1; min-width: 0; }
   .picker-btn { min-width: 0; width: 100%; }
-  .ctl-slider input[type="range"] { width: 90px; }
-  .sp-graph { max-height: 140px; }
-  .stepper { flex-wrap: wrap; gap: 8px; padding: 8px 10px; }
-  .stages { flex: 1 1 100%; }
-  .transport { min-width: 0; flex-wrap: wrap; padding-left: 0; border-left: 0; }
-  .util-slot { margin-left: 0; padding-left: 8px; }
-  .sp-caption { font-size: 16px; }
+  #picker .picker-menu { position: fixed; left: 8px !important; right: 8px; top: 52px !important; width: auto; max-width: none; max-height: 70vh; }
+  .picker-compact .picker-menu { right: 14px; width: auto; max-width: none; }
+  .menu-btn { display: inline-grid; }
+  /* 컨트롤은 서랍으로 */
+  #controls {
+    display: none; position: fixed; top: 50px; left: 0; right: 0; z-index: 30; max-height: 72vh; overflow: auto;
+    background: rgba(20,33,61,0.98); border-bottom: 1px solid var(--navy-line); box-shadow: 0 12px 30px rgba(0,0,0,0.45); padding: 12px 14px 14px;
+  }
+  body.menu-open #controls { display: block; }
+  #controls .controls { flex-wrap: wrap; overflow: visible; gap: 12px 14px; padding: 0; align-items: center; }
+  #controls .ctl-slider input[type="range"] { width: 130px; }
+  .drawer-utils { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--navy-line); }
+  /* 본문: 3D 위, 설명 패널은 하단 시트 */
+  #main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; transition: none; }
+  body.side-collapsed #main { grid-template-columns: 1fr; }
+  body.side-collapsed #side .side-panel { width: auto; }
+  #side { border-left: 0; border-top: 1px solid var(--navy-line); max-height: 40vh; display: flex; flex-direction: column; }
+  body.side-collapsed #side { max-height: 44px; overflow: hidden; border-top: 1px solid var(--navy-line); }
+  .side-toggle { display: none; }
+  .sheet-handle {
+    display: flex; align-items: center; gap: 10px; width: 100%; height: 44px; flex: 0 0 44px; padding: 0 14px;
+    background: var(--navy); border: 0; border-bottom: 1px solid var(--navy-line); color: var(--text); font-size: 13px; font-weight: 600; text-align: left;
+  }
+  .sheet-grip { width: 36px; height: 4px; border-radius: 999px; background: var(--navy-line); flex: 0 0 auto; }
+  .sheet-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sheet-handle .ico-collapse, body.side-collapsed .sheet-handle .ico-expand { display: inline; }
+  .sheet-handle .ico-expand, body.side-collapsed .sheet-handle .ico-collapse { display: none; }
+  .side-panel { padding: 10px 14px 16px; min-height: 0; }
+  .sp-caption { font-size: 15px; }
+  .sp-graph { max-height: 160px; }
+  .vhint { display: none; }
+  /* 리모컨: 단계 줄 + 재생 줄(두 줄), 유틸은 서랍으로 */
+  .stepper { flex-wrap: wrap; gap: 6px 8px; padding: 6px 10px 8px; }
+  .stages { flex: 1 1 100%; width: 100%; }
+  .transport { flex: 1 1 100%; min-width: 0; padding-left: 0; border-left: 0; gap: 6px; }
+  .stage { padding: 0 10px !important; font-size: 12px !important; }
+  .scrub { min-width: 40px; }
+  .ctl-auto .ctl-label { display: none; }
+  .util-slot { display: none; }
+  .tval { min-width: 36px; }
+  .popover { left: 8px !important; right: 8px; width: auto; max-width: none; }
+}
+
+/* 폰 가로 모드: 하단 시트 대신 오른쪽 좁은 패널(접기 버튼 유지), 리모컨은 한 줄 */
+@media (max-width: 860px) and (orientation: landscape) {
+  #main { grid-template-columns: 1fr 300px; grid-template-rows: 1fr; }
+  body.side-collapsed #main { grid-template-columns: 1fr 0; }
+  #side { max-height: none; border-top: 0; border-left: 1px solid var(--navy-line); display: block; }
+  body.side-collapsed #side { max-height: none; }
+  body.side-collapsed #side .side-panel { width: 300px; }
+  .sheet-handle { display: none; }
+  .side-toggle { display: inline-flex; }
+  .side-panel { padding-top: 14px; }
+  .stepper { flex-wrap: nowrap; }
+  .stages { flex: 0 1 auto; width: auto; }
+  .transport { flex: 1 1 auto; padding-left: 12px; border-left: 1px solid var(--navy-line); }
 }
