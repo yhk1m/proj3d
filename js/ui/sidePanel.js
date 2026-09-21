@@ -7,6 +7,7 @@ import { winkelEquirectComponent, stepProjection, endOfStep } from '../projectio
 import { aitoff, mollweide, goodeHomolosine, GOODE_LOBES_DEG, HOMOLOSINE_PHI } from '../projections/adjusted.js';
 import { ENTRY_NOTES, STEP_NOTES, SYMBOLS } from './formulaNotes.js';
 import { propertyBadge, lightBadge } from './picker.js';
+import { USAGE_NOTES } from './usageNotes.js';
 import { getState, subscribe, frame, caption, entry, rootEntry, derivation, STAGE_LABELS, lightDescription } from '../state.js';
 
 const LIGHT_ICONS = {
@@ -239,6 +240,15 @@ export function mountSidePanel(container) {
   const lightText = el('div', 'sp-light-text');
   lightBody.append(lightTitle, lightText);
   lightBox.append(lightIcon, lightBody);
+  // 쓰이는 곳: 어떤 상황·어떤 나라·기관에서 자주 쓰는지
+  const usageBox = el('div', 'sp-light sp-usage');
+  const usageIcon = el('div', 'sp-light-icon');
+  usageIcon.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-11a6 6 0 0 1 12 0c0 5.8-6 11-6 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
+  const usageBody = el('div', 'sp-light-body');
+  const usageTitle = el('div', 'sp-light-title', '쓰이는 곳');
+  const usageText = el('div', 'sp-light-text');
+  usageBody.append(usageTitle, usageText);
+  usageBox.append(usageIcon, usageBody);
   const badge = el('div', 'sp-badge');
   const texWrap = el('div', 'sp-texwrap');
   const tex = el('div', 'sp-tex');
@@ -266,7 +276,7 @@ export function mountSidePanel(container) {
   const link = el('a', null, 'https://bgnl.kr');
   link.href = 'https://bgnl.kr'; link.target = '_blank'; link.rel = 'noopener';
   copy.appendChild(link);
-  root.append(head, stageTitle, cap, lightBox, badge, texWrap, panel, readout, copy);
+  root.append(head, stageTitle, cap, lightBox, usageBox, badge, texWrap, panel, readout, copy);
   container.appendChild(root);
 
   // 패널 요소들
@@ -338,6 +348,11 @@ export function mountSidePanel(container) {
     } else {
       lightBox.style.display = 'none';
     }
+    // 쓰이는 곳: 항상 선택한 도법 기준(빛 투영 단계라도 사용자가 고른 도법의 쓰임이 궁금하다)
+    const usageId = e.id;
+    const usage = USAGE_NOTES[usageId];
+    usageBox.style.display = usage ? '' : 'none';
+    if (usage) { usageTitle.textContent = `쓰이는 곳 — ${PROJECTIONS[usageId].nameKo}`; usageText.textContent = usage; }
     const badgeText = fr.stepInfo && fr.stepInfo.badgeKo;
     badge.textContent = badgeText || '';
     badge.style.display = badgeText ? '' : 'none';

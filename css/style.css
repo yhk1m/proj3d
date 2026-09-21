@@ -103,6 +103,8 @@ button { cursor: pointer; }
 .sp-stage { color: var(--accent); font-weight: 700; font-size: 15px; padding-top: 16px; border-top: 1px solid var(--navy-line); }
 .sp-caption { margin: 0; font-size: 18px; font-weight: 500; line-height: 1.7; letter-spacing: -0.025em; word-break: keep-all; color: #f4f1e7; }
 .sp-light { display: flex; gap: 10px; align-items: flex-start; background: rgba(12,24,46,0.28); border-radius: 8px; padding: 12px; border: 1px solid var(--navy-line); }
+.sp-usage .sp-light-icon { color: #7ee0a8; }
+.sp-usage .sp-light-title { color: #7ee0a8; }
 .sp-light.on { border-color: rgba(255,209,102,0.22); }
 .sp-light-icon { color: var(--accent); flex: 0 0 auto; margin-top: 1px; }
 .sp-light-title { font-weight: 600; font-size: 13px; color: #ded5b7; margin-bottom: 6px; }
