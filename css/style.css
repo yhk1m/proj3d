@@ -243,7 +243,11 @@ body.projector { --tool-height: 44px; }
 }
 #stepper .tbtn { width: var(--tool-height); padding: 0; }
 #stepper .tbtn-play { background: #e8edf5; border-color: #e8edf5; color: var(--ink); }
-#topbar .ibtn { min-width: var(--tool-height); padding: 0; }
+#topbar .ibtn {
+  width: 20px; height: 20px; min-width: 20px; min-height: 20px;
+  border-radius: 50%; padding: 0; color: var(--muted); flex-shrink: 0;
+}
+#topbar .ibtn:hover { background: transparent; border-color: var(--accent); color: var(--accent); }
 body.projector #topbar button, body.projector #stepper button { font-size: 16px; }
 .stages { gap: 0; padding-bottom: 0; }
 #stepper .stage { border: 0; border-radius: 0; border-bottom: 2px solid transparent; padding: 0 12px; color: var(--muted); }
