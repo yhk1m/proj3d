@@ -25,6 +25,7 @@ body {
   grid-template-rows: auto 1fr auto;
   grid-template-columns: minmax(0, 1fr);   /* 헤더·푸터의 최소 폭이 레이아웃을 넓히지 못하게 */
   height: 100vh;
+  height: 100dvh;   /* iOS 사파리: 주소창(하단 탭바)을 뺀 실제 보이는 높이 — 리모컨이 주소창 밑에 깔리지 않게 */
   overflow: hidden;
   font-size: 14px;
   line-height: 1.5;
@@ -284,11 +285,11 @@ body.projector #topbar button, body.projector #stepper button { font-size: 16px;
   /* 헤더: 브랜드 아이콘 · 도법 선택 · 햄버거 */
   #topbar { padding: 6px 10px; gap: 8px; }
   .brand span { display: none; }
-  .picker { flex: 1; min-width: 0; }
+  #picker, .picker { flex: 1; min-width: 0; }
   .picker-btn { min-width: 0; width: 100%; }
   #picker .picker-menu { position: fixed; left: 8px !important; right: 8px; top: 52px !important; width: auto; max-width: none; max-height: 70vh; }
   .picker-compact .picker-menu { right: 14px; width: auto; max-width: none; }
-  .menu-btn { display: inline-grid; }
+  #topbar .menu-btn { display: inline-grid; width: var(--tool-height); padding: 0; margin-left: auto; }   /* 오른쪽 끝, 세 줄은 정중앙 */
   /* 컨트롤은 서랍으로 */
   #controls {
     display: none; position: fixed; top: 50px; left: 0; right: 0; z-index: 30; max-height: 72vh; overflow: auto;
@@ -302,7 +303,7 @@ body.projector #topbar button, body.projector #stepper button { font-size: 16px;
   #main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; transition: none; }
   body.side-collapsed #main { grid-template-columns: 1fr; }
   body.side-collapsed #side .side-panel { width: auto; }
-  #side { border-left: 0; border-top: 1px solid var(--navy-line); max-height: 40vh; display: flex; flex-direction: column; }
+  #side { border-left: 0; border-top: 1px solid var(--navy-line); max-height: 40vh; max-height: 40dvh; display: flex; flex-direction: column; }
   body.side-collapsed #side { max-height: 44px; overflow: hidden; border-top: 1px solid var(--navy-line); }
   .side-toggle { display: none; }
   .sheet-handle {
@@ -319,6 +320,7 @@ body.projector #topbar button, body.projector #stepper button { font-size: 16px;
   .vhint { display: none; }
   /* 리모컨: 단계 줄 + 재생 줄(두 줄), 유틸은 서랍으로 */
   .stepper { flex-wrap: wrap; gap: 6px 8px; padding: 6px 10px 8px; }
+  #stepper { padding-bottom: env(safe-area-inset-bottom); }   /* 홈 바 영역 피하기 */
   .stages { flex: 1 1 100%; width: 100%; }
   .transport { flex: 1 1 100%; min-width: 0; padding-left: 0; border-left: 0; gap: 6px; }
   .stage { padding: 0 10px !important; font-size: 12px !important; }
