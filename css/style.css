@@ -82,7 +82,9 @@ button { cursor: pointer; }
 .chip.on { background: var(--accent); color: var(--ink); border-color: var(--accent); font-weight: 600; }
 .chip:hover { border-color: var(--accent); color: var(--text); }
 .chip.on:hover { color: var(--ink); }
-.compare-select { background: var(--panel); border: 1px solid var(--navy-line); border-radius: 6px; padding: 3px 6px; font-size: 12px; max-width: 130px; }
+/* 비교 드롭다운: 도법 선택기와 같은 버튼·목록·스크롤바 */
+.picker-compact .picker-btn { font-size: 13px; }
+.picker-compact .picker-menu { max-height: 60vh; }
 
 /* ---- 본문 ---- */
 #main { display: grid; grid-template-columns: 1fr var(--side-w); min-height: 0; }

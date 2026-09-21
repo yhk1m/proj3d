@@ -1,6 +1,7 @@
 // © 2026 김용현
 // ui/controls.js — 표준위선·aspect·광원 슬라이더, 티소·비교·프로젝터 토글 (PLAN 2장, 8.2, 8.3)
-import { PROJECTIONS } from '../projections/registry.js';
+import { PROJECTIONS, PICKER_GROUPS } from '../projections/registry.js';
+import { createDropdown, propertyBadge } from './picker.js';
 import { ASPECT_LABELS } from '../geometry/rotate.js';
 import { getState, subscribe, setParam, setAspect, setState, rootEntry, entry, surfaceType, toQuery } from '../state.js';
 
@@ -149,19 +150,17 @@ export function mountControls(container) {
     info.addEventListener('click', (ev) => { ev.stopPropagation(); togglePopover(info); });
     tisWrap.appendChild(info);
     box.appendChild(tisWrap);
-    const cmp = el('label', 'ctl');
+    // 비교(겹쳐 보기): 도법 선택기와 같은 드롭다운
+    const cmp = el('span', 'ctl');
     cmp.append(el('span', 'ctl-label', '비교'));
-    const sel = el('select', 'compare-select');
-    const none = el('option', null, '겹쳐 보기 없음'); none.value = '';
-    sel.appendChild(none);
-    for (const p of Object.values(PROJECTIONS)) {
-      if (p.hidden || p.id === s.projection) continue;
-      const op = el('option', null, p.nameKo); op.value = p.id;
-      sel.appendChild(op);
+    const groups = [{ labelKo: null, items: [{ value: null, labelKo: '겹쳐 보기 없음' }] }];
+    for (const g of PICKER_GROUPS) {
+      const items = g.ids.filter((id) => PROJECTIONS[id] && !PROJECTIONS[id].hidden && id !== s.projection)
+        .map((id) => ({ value: id, labelKo: PROJECTIONS[id].nameKo, badges: () => [propertyBadge(PROJECTIONS[id])] }));
+      if (items.length) groups.push({ labelKo: g.labelKo, items });
     }
-    sel.value = s.compare || '';
-    sel.addEventListener('change', () => setState({ compare: sel.value || null }));
-    cmp.appendChild(sel);
+    const dd = createDropdown({ groups, value: s.compare || null, title: '다른 도법의 외곽선·해안선을 반투명하게 겹쳐 보기', onChange: (v) => setState({ compare: v }) });
+    cmp.appendChild(dd.el);
     box.appendChild(cmp);
 
   }
