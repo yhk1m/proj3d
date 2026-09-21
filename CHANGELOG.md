@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-09-21 — 단계 C 후속: 공통 버튼·담백한 단계 탭·거친 종이
+
+- `css/style.css`: 헤더와 푸터 버튼을 같은 4px 모서리·1px 테두리·무그림자로 통일. 일반 높이 36px, 프로젝터 44px. 재생 버튼도 같은 크기로 맞추고 밝은 중립색으로 구분. 단계 버튼은 박스/노란 배경/두꺼운 강조선을 제거한 텍스트 탭으로 변경; 현재 단계만 밝은 글자와 2px 밑줄로 표시.
+- `js/scene/paper.js`: 이전 펄프 얼룩과 긴 섬유 무늬 제거. 작은 불규칙 입자에 밝고 어두운 면을 짝지어 거친 드로잉 용지 같은 무광 표면으로 변경. 축소 시 입자 대비 감쇠. 표면 색 연출만 변경하며 pipeline 위치와 법선 계산은 유지.
+- `screenshots/polish-v3-dry-paper.png`, `screenshots/verify-93-v3.png`: 디자인과 검증 캡처. 이전 질감/버튼은 `polish-v2-paper-ui.png`와 비교.
+- `CHANGELOG.md`: 이번 인계 기록. 상태 머신·수학·tests·UI 연결 로직 수정 없음.
+- 확인 화면: `http://127.0.0.1:8766/?p=mercator&stage=unroll&t=1&instant=1&projector=1`. 1920×1080에서 헤더 축 버튼·푸터 재생 버튼 모두 높이 44px, 문서 가로 넘침 없음 확인.
+- `npm.cmd test` 및 `tests/verify.html` **93/93 통과**, diff 검사 통과. 60fps 실측 미확인 사항은 이전 기록과 같음.
+
+![거친 종이와 버튼 통일](screenshots/polish-v3-dry-paper.png)
+![93/93 검증](screenshots/verify-93-v3.png)
+
 ## 2026-09-21 — 단계 C 후속: 종이 질감과 시각적 우선순위
 
 사용자 요청에 따라 종이 질감 강화와 디자인 개선 1~4번을 모두 적용. 기존 `visual-polish` 브랜치에서만 작업하며 push 없음.
