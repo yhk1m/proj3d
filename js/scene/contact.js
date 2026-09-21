@@ -17,7 +17,6 @@ export function contactUniforms() {
     contactHeights: { value: new THREE.Vector2() },
     contactEnabled: { value: 0 },
     contactPlane: { value: 0 },
-    contactRotation: { value: new THREE.Matrix3() },
   };
 }
 
@@ -31,5 +30,4 @@ export function updateContact(uniforms) {
   const a = fr.surface.type === 'cylinder' ? -(p.phi0 || 0) : (p.phi1 || 0);
   const b = fr.surface.type === 'cylinder' ? (p.phi0 || 0) : (p.phi2 ?? a);
   uniforms.contactHeights.value.set(Math.sin(a), Math.sin(b));
-  uniforms.contactRotation.value.set(...fr.rotation.M);
 }

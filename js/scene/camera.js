@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { coneGeometry } from '../geometry/bend.js';
 import { PARALLEL_LIGHT_DIST } from '../projections/perspective.js';
+import { installSpaceBackground } from './space.js';
 
 const D = Math.PI / 180;
 const smooth = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
@@ -13,6 +14,7 @@ const lerp3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, 
 
 export class CameraRig {
   constructor(camera, controls, { frameGroup, moveGroup, globeGroup }) {
+    installSpaceBackground(camera.parent);
     this.camera = camera;
     this.controls = controls;
     this.frameGroup = frameGroup;

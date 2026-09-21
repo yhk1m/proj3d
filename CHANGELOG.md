@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-09-21 — 모든 종이의 지구 가림·우주 배경·비교 기본값 확인
+
+- `js/scene/paper.js`: 실제 pipeline 종이 geometry를 공유하는 깊이 전용 패스 추가(renderOrder 19). 광선 표현 뒤, 지구 표면 앞에 실행하여 내부 광선은 유지하면서 종이 뒤 지구만 가림. 접선/할선/원통/원추/평면 및 굽힘·회전 모두 동일한 실제 깊이 기준. 할선 돌출부는 유지.
+- `js/scene/globe.js`: 지구와 경위선 순서를 20/21로 통일. 표준위선 주변만 직접 잘라내던 임시 셰이더 제거. `js/scene/contact.js`: 불필요해진 지구 회전 uniform 제거. 얇은 접촉 표시는 유지.
+- `js/scene/space.js`: 청흑색 공간·은은한 별 480개를 초기화 시 CanvasTexture 한 장으로 생성. 애니메이션·별 메시 없이 배경으로 사용. `js/scene/camera.js`: 씬 카메라 리그 초기화에서 배경 연결. main 변경 없음.
+- 비교 기본값은 `state.compare=null`로 이미 '겹쳐 보기 없음'. `http://localhost:8766/` 초기 화면 선택 상태 확인. 단, Equal Earth/구드 조정 단계의 자동 비교 3곳은 읽기 전용 derivations에 있어 변경 허용 요청 중. 공유 URL의 compare 지정은 존중.
+- 비교 포인트: 메르카토르 접선·빛 투영 55%에서 종이 뒤 지구 색이 사라지고 광선/지도 선 유지. 원추 20°/50° 할선에서는 종이 바깥 지구 돌출 유지. 평면 접촉도 실제 종이로 가림. 초기 화면에서 흰 종이와 청흑색 별 배경 대비 확인.
+- `screenshots/space-tangent-project.png`, `screenshots/space-conic-secant.png`, `screenshots/space-default-no-comparison.png`, `screenshots/verify-93-space-occlusion.png`: 변경 및 93/93 검증 증빙. `CHANGELOG.md`: 인계 기록.
+- npm 및 브라우저 93/93 통과. 콘솔 셰이더 오류 없음. 60fps 실측 미확인; 깊이 패스 1회 추가, 기존 geometry 공유. 127.0.0.1 기존 탭에서 모듈 캐시가 남아 localhost:8766으로 확인; 기존 탭은 Ctrl+F5 필요.
+- 횡축 instant URL 검사 중 과도하게 확대된 시점 관찰. 이번 카메라 수정은 배경 초기화뿐이며 자동 맞춤 로직은 변경하지 않음. 해당 시점 문제는 추가 진단 필요.
+
 ## 2026-09-21 — 접촉선 두께 축소·지구 표면 직접 가림
 
 - `js/scene/contact.js`: 접촉 표시용 공통 셰이더와 uniform 갱신 추가. 상태는 읽기만 하며 위치 계산 없음. 표준위선 높이와 프레임 회전으로 접촉부 판별.

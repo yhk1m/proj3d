@@ -66,6 +66,15 @@ export class Paper {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 1;
 
+    // 광선(9~13)은 보인 뒤, 지구(20~21)에만 실제 종이의 가림을 적용.
+    // 별도 근사면 없이 동일한 pipeline geometry/세계 변환으로 깊이를 기록한다.
+    this.globeOccluder = new THREE.Mesh(this.geometry, new THREE.MeshBasicMaterial({
+      side: THREE.DoubleSide, transparent: true, opacity: 0,
+      colorWrite: false, depthWrite: true, forceSinglePass: true,
+    }));
+    this.globeOccluder.frustumCulled = false;
+    this.globeOccluder.renderOrder = 19;
+
     // 접촉부만 불투명하게 깊이를 기록한다. 반투명 지구가 나중에 그려져도
     // 종이와 만나는 선을 덮지 않으며, 실제로 종이 밖으로 나온 부분은 유지한다.
     // 위치는 별도로 만들지 않고 pipeline으로 계산한 종이 geometry를 공유한다.
@@ -112,7 +121,7 @@ export class Paper {
     this.edge.renderOrder = 2;
 
     this.group = new THREE.Group();
-    this.group.add(this.mesh, this.edge, this.contact);
+    this.group.add(this.mesh, this.edge, this.contact, this.globeOccluder);
     this._g = [0, 0];
     this._p = [0, 0, 0];
     this._translucent = false;

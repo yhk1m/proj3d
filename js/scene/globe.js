@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import { geoPath, geoEquirectangular } from 'd3-geo';
 import { feature } from 'topojson-client';
 import { unitVector } from '../geometry/rotate.js';
-import { contactGLSL, contactUniforms, updateContact } from './contact.js';
 
 const D = Math.PI / 180;
 
@@ -75,12 +74,9 @@ function graticuleSegments(stepDeg = 15, radius = 1.003) {
 }
 
 const VERT = /* glsl */ `
-  varying vec3 vContactPosition;
-  uniform mat3 contactRotation;
   varying vec3 vNormal;
   varying vec2 vUv;
   void main() {
-    vContactPosition = contactRotation * position;
     vNormal = normalize(normalMatrix * normal);
     vUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -88,8 +84,6 @@ const VERT = /* glsl */ `
 `;
 
 const FRAG = /* glsl */ `
-  ${contactGLSL}
-  varying vec3 vContactPosition;
   precision highp float;
   uniform sampler2D landMask;
   uniform vec3 ocean;
@@ -99,9 +93,6 @@ const FRAG = /* glsl */ `
   varying vec3 vNormal;
   varying vec2 vUv;
   void main() {
-    vec3 contactPoint = normalize(vContactPosition);
-    if (contactEnabled > 0.5 && (contactPlane < 0.5 || contactPoint.z > 0.0)
-      && contactDistance(contactPoint) < 0.012) discard;
     float m = texture2D(landMask, vUv).r;
     vec3 col = mix(ocean, land, m);
     float l = 0.62 + 0.38 * max(dot(normalize(vNormal), normalize(lightDir)), 0.0);
@@ -113,7 +104,6 @@ export class Globe {
   constructor(landTexture) {
     this.group = new THREE.Group();
     this.uniforms = {
-      ...contactUniforms(),
       landMask: { value: landTexture },
       ocean: { value: new THREE.Color(0x27436f) },
       land: { value: new THREE.Color(0x9cc3b0) },
@@ -125,34 +115,21 @@ export class Globe {
     this.mesh = new THREE.Mesh(sphereGeometry(96, 48, 0.992), this.material);
     this.mesh.renderOrder = 0;
     this.gratMaterial = new THREE.LineBasicMaterial({ color: 0xc7d6ee, transparent: true, opacity: 0.45 });
-    this.gratMaterial.onBeforeCompile = (shader) => {
-      Object.assign(shader.uniforms, this.uniforms);
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vContactPosition; uniform mat3 contactRotation;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvContactPosition = contactRotation * position;');
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', `#include <common>\n${contactGLSL}\nvarying vec3 vContactPosition;`)
-        .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
-          vec3 contactPoint = normalize(vContactPosition);
-          if (contactEnabled > 0.5 && (contactPlane < 0.5 || contactPoint.z > 0.0)
-            && contactDistance(contactPoint) < 0.012) discard;
-        `);
-    };
     this.graticule = new THREE.LineSegments(graticuleSegments(15, 0.996), this.gratMaterial);
-    this.graticule.renderOrder = 0;
+    this.graticule.renderOrder = 21;
     this.group.add(this.mesh, this.graticule);
     this.setOpacity(1);
   }
 
   /** 1 = 불투명, 0.35 = 내부 광원이 보이게 */
   setOpacity(o) {
-    updateContact(this.uniforms);
     const translucent = o < 0.999;
     this.uniforms.opacity.value = o;
-    this.material.transparent = translucent;
+    // 불투명할 때도 종이 깊이 패스(19) 뒤에 그려 가림 순서를 유지한다.
+    this.material.transparent = true;
     this.material.depthWrite = !translucent;
     this.material.needsUpdate = true;
-    this.mesh.renderOrder = translucent ? 20 : 0;
+    this.mesh.renderOrder = 20;
     this.gratMaterial.opacity = 0.45 * o;
   }
 }
