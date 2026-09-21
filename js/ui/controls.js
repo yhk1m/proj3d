@@ -170,22 +170,28 @@ export function mountControls(container) {
   render(getState());
 }
 
-/** 유틸 버튼(저사양·프로젝터·링크 복사) — 하단 재생 줄 오른쪽에 둔다(헤더가 두 줄이 되지 않게). */
-export function mountUtilControls(container, { onFullscreen } = {}) {
+/** 유틸 버튼(저사양·전체화면·링크 복사) — 하단 재생 줄 오른쪽에 둔다(헤더가 두 줄이 되지 않게). */
+export function mountUtilControls(container) {
   let renderedKey = null;
   const box = el('span', 'utils');
   container.appendChild(box);
+  // 전체화면 = 프로젝터 모드. 전체화면 상태를 state.projector 로 반영해 큰 글씨·고대비 스타일이 따라붙게 한다.
+  const isFull = () => !!document.fullscreenElement;
+  document.addEventListener('fullscreenchange', () => setState({ projector: isFull() }));
   function render(s) {
     const key = [s.lowPower, s.projector].join('|');
     if (key === renderedKey) return;
     renderedKey = key;
     box.innerHTML = '';
     box.appendChild(toggle({ label: '저사양', checked: s.lowPower, onChange: (v) => setState({ lowPower: v }), cls: 'ctl-minor' }));
-    const proj = el('button', 'chip' + (s.projector ? ' on' : ''), '프로젝터');
-    proj.type = 'button';
-    proj.title = '큰 글씨·고대비 (전체화면)';
-    proj.addEventListener('click', () => { setState({ projector: !s.projector }); if (!s.projector && onFullscreen) onFullscreen(); });
-    box.appendChild(proj);
+    const full = el('button', 'chip' + (s.projector ? ' on' : ''), s.projector ? '전체화면 해제' : '전체화면');
+    full.type = 'button';
+    full.title = '전체화면 (프로젝터용 큰 글씨·고대비)';
+    full.addEventListener('click', () => {
+      if (isFull()) { document.exitFullscreen && document.exitFullscreen().catch(() => {}); }
+      else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+    });
+    box.appendChild(full);
     const share = el('button', 'chip', '링크 복사');
     share.type = 'button';
     share.addEventListener('click', async () => {

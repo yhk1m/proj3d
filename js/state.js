@@ -28,7 +28,7 @@ const state = {
   tissot: false,
   compare: null,      // 겹쳐 볼 도법 id | null
   playing: 0,         // 0 | 1 | -1 (재생 방향)
-  autoplay: false,
+  autoplay: true,     // 기본값: 한 단계가 끝나면 다음 단계를 이어서 재생
   projector: false,
   lowPower: false,
 };

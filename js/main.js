@@ -122,9 +122,7 @@ async function main() {
   mountPicker(document.getElementById('picker'));
   mountControls(document.getElementById('controls'));
   const { utilSlot } = mountStepper(document.getElementById('stepper'));
-  mountUtilControls(utilSlot, {
-    onFullscreen: () => { if (document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); },
-  });
+  mountUtilControls(utilSlot);
   const side = mountSidePanel(document.getElementById('side'));
   const tooltip = document.getElementById('tooltip');
   const { fitBtn } = mountViewTools(viewport, rig);

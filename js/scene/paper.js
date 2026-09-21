@@ -136,6 +136,8 @@ export class Paper {
       this.material.transparent = tr;
       this.material.depthWrite = !tr;
       this.material.needsUpdate = true;
+      // 종이가 반투명한 빛 투영 단계에서는 지구 가림(깊이 패스)을 끈다 — 감싼 지구와 안쪽 광원이 비쳐 보여야 한다
+      this.globeOccluder.visible = !tr;
     }
     this.edge.material.opacity = 0.9 * o;
   }

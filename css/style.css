@@ -237,12 +237,14 @@ body.projector { --tool-height: 44px; }
   background: transparent; color: var(--text); box-shadow: none;
   font-size: 13px; font-weight: 500; padding: 0 10px;
 }
-#topbar button:hover, #stepper button:hover { background: rgba(232,237,245,0.07); border-color: #71819d; }
+/* 강조색은 노랑(--accent) 하나로 통일: 선택된 버튼·재생·현재 단계·맞춤 버튼·배지 */
+#topbar button:hover, #stepper button:hover { background: rgba(255,209,102,0.08); border-color: rgba(255,209,102,0.55); }
 #topbar button.on, #stepper .utils button.on {
-  background: rgba(232,237,245,0.12); border-color: #71819d; color: #fff;
+  background: rgba(255,209,102,0.16); border-color: var(--accent); color: var(--accent);
 }
 #stepper .tbtn { width: var(--tool-height); padding: 0; }
-#stepper .tbtn-play { background: #e8edf5; border-color: #e8edf5; color: var(--ink); }
+#stepper .tbtn-play { background: var(--accent); border-color: var(--accent); color: var(--ink); }
+#stepper .tbtn-play:hover { background: #ffdc85; border-color: #ffdc85; }
 #topbar .ibtn {
   width: 20px; height: 20px; min-width: 20px; min-height: 20px;
   border-radius: 50%; padding: 0; color: var(--muted); flex-shrink: 0;
@@ -252,10 +254,10 @@ body.projector #topbar button, body.projector #stepper button { font-size: 16px;
 .stages { gap: 0; padding-bottom: 0; }
 #stepper .stage { border: 0; border-radius: 0; border-bottom: 2px solid transparent; padding: 0 12px; color: var(--muted); }
 #stepper .stage.done { color: var(--text); }
-#stepper .stage.on { color: #fff; border-bottom-color: #e8edf5; background: transparent; font-weight: 600; box-shadow: none; }
-#stepper .stage:hover { border-bottom-color: #71819d; background: rgba(232,237,245,0.04); }
+#stepper .stage.on { color: var(--accent); border-bottom-color: var(--accent); background: transparent; font-weight: 600; box-shadow: none; }
+#stepper .stage:hover { border-bottom-color: rgba(255,209,102,0.55); background: rgba(255,209,102,0.05); }
 #topbar .picker-item { width: 100%; height: auto; min-height: var(--tool-height); border: 0; }
-#topbar .picker-item.on { background: rgba(232,237,245,0.10); }
+#topbar .picker-item.on { background: rgba(255,209,102,0.15); }
 
 @media (max-width: 860px) {
   body { font-size: 13px; }
