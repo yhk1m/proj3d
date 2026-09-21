@@ -61,7 +61,7 @@ export function mountStepper(container) {
       stages.innerHTML = '';
       tl.forEach((x, i) => {
         let label = stageLabel(x.stage);
-        if (x.stage === 'adjust') label = `조정 ${x.step + 1}${d && d.steps.length > 1 ? '/' + d.steps.length : ''}`;
+        if (x.stage === 'adjust') label = d && d.steps.length > 1 ? `조정 ${x.step + 1}/${d.steps.length}` : '조정';   // 한 단계뿐이면 번호 없이
         const b = el('button', 'stage', label);
         b.type = 'button';
         b.dataset.i = i;
