@@ -37,9 +37,35 @@ button { cursor: pointer; }
   padding: 8px 14px; border-bottom: 1px solid var(--navy-line); background: var(--navy);
 }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--accent); white-space: nowrap; }
-.picker {
-  background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; padding: 6px 10px; min-width: 260px;
+/* ---- 도법 선택기 (버튼 + 목록) ---- */
+.picker { position: relative; }
+.picker-btn {
+  display: flex; align-items: center; gap: 8px; min-width: 280px;
+  background: var(--panel); border: 1px solid var(--navy-line); border-radius: 8px; padding: 6px 10px; color: var(--text); text-align: left;
 }
+.picker-btn:hover { border-color: var(--accent); }
+.picker-name { font-weight: 600; flex: 1; }
+.picker-badges { display: inline-flex; gap: 4px; }
+.picker-caret { color: var(--muted); display: inline-grid; place-items: center; }
+.picker-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 25; width: 380px; max-width: calc(100vw - 24px); max-height: 72vh; overflow: auto;
+  background: rgba(20,33,61,0.98); border: 1px solid var(--navy-line); border-radius: 10px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+.picker-group { color: var(--muted); font-size: 11px; padding: 10px 8px 4px; }
+.picker-item {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  background: transparent; border: 0; border-radius: 6px; padding: 6px 8px; color: var(--text); font-size: 13px;
+}
+.picker-item:hover { background: var(--panel); }
+.picker-item.on { background: rgba(255,209,102,0.15); }
+.picker-item-name { flex: 1; }
+.picker-legend { display: flex; gap: 8px; align-items: flex-start; color: var(--muted); font-size: 11px; padding: 10px 8px 6px; border-top: 1px solid var(--navy-line); margin-top: 6px; line-height: 1.45; }
+.pbadge { display: inline-block; font-size: 11px; line-height: 1.4; padding: 1px 7px; border-radius: 999px; border: 1px solid; white-space: nowrap; font-weight: 600; }
+.pbadge-conformal { color: #7cc4ff; border-color: rgba(124,196,255,0.5); background: rgba(124,196,255,0.12); }
+.pbadge-equal { color: #7ee0a8; border-color: rgba(126,224,168,0.5); background: rgba(126,224,168,0.12); }
+.pbadge-equidistant { color: #c9a8ff; border-color: rgba(201,168,255,0.5); background: rgba(201,168,255,0.12); }
+.pbadge-compromise { color: #ffb37c; border-color: rgba(255,179,124,0.5); background: rgba(255,179,124,0.12); }
+.pbadge-light { color: var(--accent); border-color: rgba(255,209,102,0.55); background: rgba(255,209,102,0.12); }
 .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .ctl { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .ctl-label { color: var(--muted); font-size: 12px; }
@@ -189,7 +215,8 @@ body.projector { --muted: #D5DEEC; --navy-line: #4A5F8C; --side-w: 420px; }
   #main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
   #side { border-left: 0; border-top: 1px solid var(--navy-line); max-height: 38vh; }
   .side-panel { padding: 10px 14px 16px; }
-  .picker { min-width: 0; flex: 1; }
+  .picker { flex: 1; }
+  .picker-btn { min-width: 0; width: 100%; }
   .ctl-slider input[type="range"] { width: 90px; }
   .sp-graph { max-height: 140px; }
 }

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { getState, subscribe, frame, tick, loadFromQuery, entry } from './state.js';
 import { coastlines, graticuleLines, graticuleIntersections, splitLines, splitAtCuts, rotatePoints } from './geometry/clip.js';
-import { maxRayReach, positionOf, paperPosition } from './geometry/pipeline.js';
+import { maxRayReach, minLightDist, positionOf, paperPosition } from './geometry/pipeline.js';
 import { flatOffset } from './geometry/bend.js';
 import { unitVector } from './geometry/rotate.js';
 import { lightPosition } from './projections/perspective.js';
@@ -26,6 +26,9 @@ import { damp } from './util/tween.js';
 const D = Math.PI / 180;
 const DEV = /[?&]dev=1/.test(location.search) || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const INSTANT = /[?&]instant=1/.test(location.search); // 스크린샷 검증용: 카메라·지구본 감쇠를 즉시 끝낸다
+// 빛 투영 타이밍: 광원 → 구면(빠르게) 0~FRONT_TO_SPHERE, 구면 → 종이 그 뒤. 평면 도법은 PLANE_LIGHT_END 에 빛이 다 닿고 나머지는 완성 모션.
+export const FRONT_TO_SPHERE = 0.3;
+export const PLANE_LIGHT_END = 0.85;
 
 const ICONS = {
   fit: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -183,7 +186,9 @@ async function main() {
     if (fr === lastFrame && s.tissot === lastTissot && s.compare === lastCompare && s.lowPower === lastLowPower) return;
     document.body.classList.toggle('projector', !!s.projector);
     const plane = fr.surface.type === 'plane';           // 평면은 펼치기 단계가 없다
-    const projectDone = s.stage === 'project' && s.t >= 0.999;
+    const lightEnd = plane ? PLANE_LIGHT_END : 0.999;
+    const projectDone = s.stage === 'project' && s.t >= lightEnd;
+    const finish = plane && s.stage === 'project' ? Math.max(0, Math.min(1, (s.t - PLANE_LIGHT_END) / (1 - PLANE_LIGHT_END))) : 0; // 완성 모션 진행도
 
     // 단계·도법이 바뀌면 카메라 자동 추적을 다시 켠다
     if (s.stage !== lastStage || s.step !== lastStep || fr.entry !== lastEntry) {
@@ -222,7 +227,16 @@ async function main() {
     }
 
     const ctx = { f: fr.f, domain: fr.domain, surface: fr.surface, params: fr.params, light: fr.light, bendT: fr.bendT, s: fr.s, rayReach: 1 };
-    if (fr.s < 1) ctx.rayReach = maxRayReach({ ...ctx, s: 1 }, rayPoints) * 1.02;
+    if (fr.s < 1) {
+      const full = { ...ctx, s: 1 };
+      ctx.rayReach = maxRayReach(full, rayPoints) * 1.02;
+      if (s.stage === 'project') {
+        // 빛의 앞머리 진행도 s: 광원→구면 구간(reach 0 ~ 최소 |P−L|)은 FRONT_TO_SPHERE 동안 빠르게, 나머지는 구면→종이
+        const tl = plane ? Math.min(1, s.t / PLANE_LIGHT_END) : s.t;
+        const r0 = Math.min(0.95, minLightDist(full, rayPoints) / ctx.rayReach);
+        ctx.s = tl >= 1 ? 1 : tl < FRONT_TO_SPHERE ? r0 * (tl / FRONT_TO_SPHERE) : r0 + (1 - r0) * ((tl - FRONT_TO_SPHERE) / (1 - FRONT_TO_SPHERE));
+      }
+    }
     currentCtx = ctx; currentFrame = fr;
 
     paper.update(ctx);
@@ -236,7 +250,7 @@ async function main() {
     // 광선은 빛 투영 단계에만 그린다.
     let rayI = 0, raysOn = false;
     if (s.stage === 'wrap') rayI = 0.45 * Math.min(1, s.t * 3);
-    else if (s.stage === 'project') { rayI = plane && projectDone ? 0 : 1; raysOn = true; }
+    else if (s.stage === 'project') { rayI = plane ? 1 - finish : 1; raysOn = true; }
     else if (s.stage === 'unroll') { rayI = Math.max(0, 1 - s.t * 2.5); raysOn = true; }
     rays.group.visible = rayI > 0;
     if (rayI > 0) rays.update(ctx, rayI, raysOn);
@@ -244,10 +258,10 @@ async function main() {
     // 지구본: 씌우기 0.8(안쪽 광원이 비침), 빛 단계 0.35. 종이도 빛 단계에 반투명(0.5) — 안쪽 광원과 광선이 보이게
     globe.setOpacity(
       s.stage === 'wrap' ? 1 - 0.2 * Math.min(1, s.t * 3)
-        : s.stage === 'project' ? (plane && projectDone ? 1 : 0.8 - 0.45 * Math.min(1, s.t * 3))
+        : s.stage === 'project' ? (plane ? 0.35 + 0.65 * finish : 0.8 - 0.45 * Math.min(1, s.t * 3))
           : s.stage === 'unroll' ? 0.35 + 0.65 * Math.min(1, s.t * 2) : 1,
     );
-    paperOpacityTarget = s.stage === 'project' ? (plane && projectDone ? 1 : 0.5) : s.stage === 'unroll' ? 0.5 + 0.5 * Math.min(1, s.t / 0.3) : 1;
+    paperOpacityTarget = s.stage === 'project' ? (plane ? 0.5 + 0.5 * finish : 0.5) : s.stage === 'unroll' ? 0.5 + 0.5 * Math.min(1, s.t / 0.3) : 1;
 
     if (fr.moveP < 1) {
       const b = paperBox();

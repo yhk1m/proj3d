@@ -253,7 +253,7 @@ export function caption() {
     case 'wrap': return plane
       ? '원판 종이를 접점에 붙이는 중. 평면은 굽힐 필요가 없는 가전면'
       : '종이가 말리면서 지구본에 씌워지는 중. 종이는 늘어나지 않음 — 펼 수 있는 면(가전면)만 이렇게 씌울 수 있음';
-    case 'project': return lightCaption(root) + (plane && state.t >= 1 ? ' 투영 끝, 종이는 이미 펼쳐진 상태' : '');
+    case 'project': return lightCaption(root) + (plane && state.t >= 0.85 ? ' 투영 끝, 종이는 이미 펼쳐진 상태' : '');
     case 'unroll': return `지도가 그려진 종이를 다시 펼치는 중. ${root.captionKo}`;
     case 'adjust': {
       const st = frame().stepInfo;

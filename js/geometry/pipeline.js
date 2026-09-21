@@ -103,6 +103,19 @@ export function paperPosition(ctx, lamP, phiP, out) {
   return bend(ctx.surface, ctx.params, 1, xy[0], xy[1], out);
 }
 
+/** 광원에서 구면 점까지 거리의 최솟값(도메인 안 표본점). 빛이 구면에 처음 닿는 순간을 잡는 데 쓴다. */
+export function minLightDist(ctx, points) {
+  let m = Infinity;
+  for (const [l, p] of points) {
+    if (!inDomain(ctx.domain, l, p)) continue;
+    const P = unitVector(l, p, tmpP);
+    const L = lightPosition(ctx.light, ctx.surface, P, tmpL);
+    const d = dist3(L, P);
+    if (d < m) m = d;
+  }
+  return Number.isFinite(m) ? m : 0;
+}
+
 /** 광선 도달 거리의 최댓값: 도메인 안 표본점들의 |Q − L| 최댓값 */
 export function maxRayReach(ctx, points) {
   let m = 0;

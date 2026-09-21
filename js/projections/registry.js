@@ -227,7 +227,7 @@ export const PROJECTIONS = {
     captionKo: '40°44′ 에서 시뉴소이드(저위도)와 몰바이데(고위도)를 접합한 정적도법. 아직 절개하지 않은 상태.',
   },
   goodeHomolosine: {
-    id: 'goodeHomolosine', nameKo: '구드 호몰로사인 도법', family: 'interrupted', property: 'equalArea',
+    id: 'goodeHomolosine', nameKo: '호몰로사인(구드) 도법', family: 'interrupted', property: 'equalArea',
     surface: null, light: null, params: {}, domain: { ...rect(-90, 90), cuts: A.GOODE_CUTS },
     forward: A.goodeHomolosine, derivation: 'goodeFromParts',
     formulaTex: '\\begin{gathered}|\\varphi| \\le 40°44\': \\text{Sinusoidal},\\quad |\\varphi| > 40°44\': \\text{Mollweide}-0.0528\\\\[2pt] x = \\lambda_0 + x\\!\\left(\\lambda-\\lambda_0,\\ \\varphi\\right)\\ \\ (\\lambda_0 = \\text{로브 중앙경선})\\end{gathered}',

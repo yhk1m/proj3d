@@ -26,6 +26,7 @@ export class CameraRig {
       globePos: new THREE.Vector3(), globeScale: 1,
     };
     this._v = new THREE.Vector3();
+    this._qInv = new THREE.Quaternion();
     this._normalWorld = new THREE.Vector3();
     this._upFlat = new THREE.Vector3();
     this._worldUp = new THREE.Vector3(0, 1, 0);
@@ -68,17 +69,24 @@ export class CameraRig {
     const dir3 = plane ? (lightBehind ? [0.95, 0.42, 0.28] : [0.9, 0.5, 0.55]) : cone ? [0.36, 0.3, -1] : [0.36, 0.28, 1];
     const n3 = Math.hypot(...dir3);
     const dz = [dir3[0] / n3, dir3[1] / n3, dir3[2] / n3];            // 카메라 → 대상 반대 방향(프레임 좌표)
-    const upHint = Math.abs(dz[1]) > 0.9 ? [0, 0, -1] : [0, 1, 0];
+    // 화면 위쪽 = 실제 카메라 up(세계 Y)을 프레임 좌표로 옮긴 것. 시선과 나란하면 프레임 −Z 로 대신한다.
+    this._qInv.copy(this.frameGroup.quaternion).invert();
+    const upW = this._v.set(0, 1, 0).applyQuaternion(this._qInv);
+    const upHint = Math.abs(upW.x * dz[0] + upW.y * dz[1] + upW.z * dz[2]) > 0.9 ? [0, 0, -1] : [upW.x, upW.y, upW.z];
     let rx = [upHint[1] * dz[2] - upHint[2] * dz[1], upHint[2] * dz[0] - upHint[0] * dz[2], upHint[0] * dz[1] - upHint[1] * dz[0]];
     const rl = Math.hypot(...rx); rx = [rx[0] / rl, rx[1] / rl, rx[2] / rl];
     const uy = [dz[1] * rx[2] - dz[2] * rx[1], dz[2] * rx[0] - dz[0] * rx[2], dz[0] * rx[1] - dz[1] * rx[0]];
-    // 화면 축에 투영한 반폭. 종이는 상자 꼭짓점 대신 실제 정점을 쓴다(비스듬히 본 원판은 상자보다 훨씬 얇다).
-    let hx = 0, hy = 0, near = -Infinity;
+    // 원근 맞춤: 점마다 "이 점이 화면에 들어오려면 카메라가 c3 에서 얼마나 떨어져야 하는가"를 구해 최댓값을 쓴다.
+    //   가로 offset h, 시선 방향 깊이 depth(카메라 쪽이 +) → dist ≥ h / tan(fov/2) + depth
+    // 종이는 상자 꼭짓점 대신 실제 정점을 쓴다(비스듬히 본 원판은 상자보다 훨씬 얇다).
+    const tanV = Math.tan(fovV / 2), tanH = Math.tan(fovH / 2);
+    let need = 0;
     const accum = (px, py, pz) => {
       const vx = px - c3[0], vy = py - c3[1], vz = pz - c3[2];
-      hx = Math.max(hx, Math.abs(vx * rx[0] + vy * rx[1] + vz * rx[2]));
-      hy = Math.max(hy, Math.abs(vx * uy[0] + vy * uy[1] + vz * uy[2]));
-      near = Math.max(near, vx * dz[0] + vy * dz[1] + vz * dz[2]);
+      const depth = vx * dz[0] + vy * dz[1] + vz * dz[2];
+      const hx = Math.abs(vx * rx[0] + vy * rx[1] + vz * rx[2]);
+      const hy = Math.abs(vx * uy[0] + vy * uy[1] + vz * uy[2]);
+      need = Math.max(need, hx / tanH + depth, hy / tanV + depth);
     };
     if (points) {
       for (let i = 0; i < points.length; i += 3) if (!Number.isNaN(points[i])) accum(points[i] + off.x, points[i + 1] + off.y, points[i + 2] + off.z);
@@ -94,7 +102,7 @@ export class CameraRig {
       const r = dLight === Infinity ? 1.25 : 0.45;
       accum(r, r, -dl - 0.1); accum(-r, -r, -dl - 0.1); accum(r, -r, -dl); accum(-r, r, -dl);
     }
-    const dist3 = Math.max(2.6, Math.max(hy / Math.tan(fovV / 2), hx / Math.tan(fovH / 2)) * 1.12 + near + 0.25);
+    const dist3 = Math.max(2.6, need * 1.08 + 0.3);
     const pos3 = [c3[0] + dz[0] * dist3, c3[1] + dz[1] * dist3, c3[2] + dz[2] * dist3];
 
     // ---- 정면 자세: 종이 평면을 꽉 채우고, 지구본은 왼쪽 위에 작게 ----
@@ -118,7 +126,7 @@ export class CameraRig {
     let wf = 0;
     if (s.stage === 'adjust') wf = 1;
     else if (s.stage === 'unroll') wf = smooth((s.t - 0.15) / 0.85);
-    else if (plane && s.stage === 'project') wf = smooth((s.t - 0.8) / 0.2);
+    else if (plane && s.stage === 'project') wf = smooth((s.t - 0.85) / 0.15);   // 빛이 다 닿은(0.85) 뒤 완성 모션
     this.frameToWorld(lerp3(pos3, posF, wf), d.pos);
     this.frameToWorld(lerp3(c3, look, wf), d.target);
 

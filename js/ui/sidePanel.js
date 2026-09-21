@@ -6,6 +6,7 @@ import { ROBINSON_TABLE } from '../projections/robinsonTable.js';
 import { winkelEquirectComponent, stepProjection, endOfStep } from '../projections/derivations.js';
 import { aitoff, mollweide, goodeHomolosine, GOODE_LOBES_DEG, HOMOLOSINE_PHI } from '../projections/adjusted.js';
 import { ENTRY_NOTES, STEP_NOTES, SYMBOLS } from './formulaNotes.js';
+import { propertyBadge, lightBadge } from './picker.js';
 import { getState, subscribe, frame, caption, entry, rootEntry, derivation, STAGE_LABELS, lightDescription } from '../state.js';
 
 const LIGHT_ICONS = {
@@ -89,8 +90,9 @@ function drawLobes(canvas, fr) {
   ctx.fillStyle = '#e8553f'; ctx.fillRect(W - pad.r - 58, pad.t + 2, 12, 3);
   ctx.fillStyle = '#e8edf5'; ctx.fillText('몰바이데', W - pad.r - 42, pad.t + 7);
 
-  // ---- 아래: 로브 배치도 ----
-  const top = gH + 10, mapH = H - top - 4;
+  // ---- 아래: 로브 배치도 (제목 줄 아래에 여백을 두고 그린다) ----
+  const titleY = gH + 22;
+  const top = gH + 34, mapH = H - top - 6;
   const sx = (W - 16) / (2 * Math.PI), sy = mapH / 3.0;
   const mx = (x) => W / 2 + x * sx, my = (y) => top + mapH / 2 - y * sy;
   const eps = 1e-6;
@@ -127,7 +129,7 @@ function drawLobes(canvas, fr) {
   GOODE_LOBES_DEG.north.forEach((l) => drawLobe(l, 1));
   GOODE_LOBES_DEG.south.forEach((l) => drawLobe(l, -1));
   ctx.fillStyle = 'rgba(169,182,204,0.9)';
-  ctx.fillText(step >= 2 ? '로브 6개와 중앙경선(점선) — 절개는 바다에서만' : step === 1 ? '점선 = 40°44′ 이음매' : '아래: 완성된 구드 도법의 로브 배치', 8, top + 12);
+  ctx.fillText(step >= 2 ? '로브 6개와 중앙경선(점선) — 절개는 바다에서만' : step === 1 ? '점선 = 40°44′ 이음매' : '아래: 완성된 호몰로사인(구드) 도법의 로브 배치', 8, titleY);
 }
 
 // ---------------------------------------------------------------------------
@@ -290,7 +292,7 @@ export function mountSidePanel(container) {
   drawMini(miniA, aitoff, '#ffd166');
   drawMini(miniB, winkelEquirectComponent, '#7ee0a8');
   const areaRatio = el('div', 'sp-area');
-  const lobes = el('canvas', 'sp-graph sp-lobes'); lobes.width = 300; lobes.height = 300;
+  const lobes = el('canvas', 'sp-graph sp-lobes'); lobes.width = 300; lobes.height = 330;
 
   let currentPanel = null;
   function showPanel(name, node) {
@@ -318,7 +320,10 @@ export function mountSidePanel(container) {
     const e = fr.entry, r = fr.root;
     title.textContent = e.nameKo;
     chips.innerHTML = '';
-    chips.append(el('span', 'chip-i', FAMILY_LABELS[e.family]), el('span', 'chip-i', PROPERTY_LABELS[e.property]), el('span', 'chip-i', e.light ? '빛 투영' : `조정 ← ${r.nameKo}`));
+    chips.appendChild(el('span', 'chip-i', FAMILY_LABELS[e.family]));
+    const pb = propertyBadge(e); if (pb) chips.appendChild(pb);
+    const lb = lightBadge(e);
+    chips.appendChild(lb || el('span', 'chip-i', `조정 ← ${r.nameKo}`));
     if (fr.stepInfo) stageTitle.textContent = `${STAGE_LABELS.adjust} — ${fr.stepInfo.titleKo}`;
     else stageTitle.textContent = STAGE_LABELS[s.stage] + (s.stage !== 'flat' && s.stage !== 'adjust' ? ` — ${r.nameKo}` : '');
     cap.textContent = caption();
