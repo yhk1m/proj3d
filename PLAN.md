@@ -516,5 +516,6 @@ A1 = 1.340264,  A2 = −0.081106,  A3 = 0.000893,  A4 = 0.003796
 
 ## 13. 배포
 
-- GitHub Pages, bgnl.kr 서브도메인(이름 미정). `CNAME` 파일 포함.
+- (2026-09-21 결정) GitHub 저장소 `yhk1m/proj3d`(public) + **Vercel** 정적 배포, 서브도메인 `proj3d.bgnl.kr`. 다른 bgnl.kr 프로젝트와 같은 방식이라 GitHub Pages 대신 택했다. `vercel.json`: 빌드 없음, 출력 = 저장소 루트, js/css/html 은 `max-age=0, must-revalidate`(모듈 캐시로 옛 코드가 남지 않게), `data/` 는 하루 캐시.
+- `main` 에 푸시하면 Vercel Git 연동으로 자동 배포된다.
 - 모든 CDN 의존성은 정확한 버전으로 고정하고, `data/`의 TopoJSON은 저장소에 포함한다.
