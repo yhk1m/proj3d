@@ -73,8 +73,18 @@ button { cursor: pointer; }
 .sp-stage { color: var(--accent); font-weight: 600; font-size: 13px; }
 .sp-caption { margin: 0; font-size: 14px; line-height: 1.65; word-break: keep-all; }
 .sp-badge { display: inline-block; align-self: flex-start; background: rgba(126,224,168,0.15); color: var(--ok); border: 1px solid rgba(126,224,168,0.5); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
-.sp-tex { background: var(--panel); border-radius: 8px; padding: 6px 10px; overflow: hidden; font-size: 14px; }
+.sp-texwrap { display: flex; flex-direction: column; gap: 4px; }
+.sp-tex { background: var(--panel); border-radius: 8px; padding: 6px 10px; overflow: hidden; font-size: 14px; cursor: pointer; border: 1px solid transparent; }
+.sp-tex:hover { border-color: var(--navy-line); }
 .sp-tex .katex-display { margin: 4px 0; overflow: hidden; }
+.sp-tex-toggle { align-self: flex-end; background: transparent; border: 0; color: var(--accent); font-size: 12px; padding: 2px 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.sp-tex-toggle.on { color: var(--muted); }
+.sp-texnote { background: rgba(255,209,102,0.06); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 8px 12px; font-size: 13px; line-height: 1.6; word-break: keep-all; }
+.sp-texnote p { margin: 0 0 8px; }
+.sp-texnote p:last-child { margin-bottom: 0; }
+.sp-texnote b { color: var(--accent); font-weight: 600; }
+.sp-texnote-sym { color: var(--muted); font-size: 11px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed var(--navy-line); }
+body.projector .sp-texnote { font-size: 16px; }
 .sp-lobes { height: auto; }
 .sp-panel:empty { display: none; }
 .sp-graph { width: 100%; height: auto; background: var(--panel); border-radius: 8px; }

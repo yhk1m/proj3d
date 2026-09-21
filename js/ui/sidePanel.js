@@ -5,6 +5,7 @@ import { PROJECTIONS, FAMILY_LABELS, PROPERTY_LABELS } from '../projections/regi
 import { ROBINSON_TABLE } from '../projections/robinsonTable.js';
 import { winkelEquirectComponent, stepProjection, endOfStep } from '../projections/derivations.js';
 import { aitoff, mollweide, goodeHomolosine, GOODE_LOBES_DEG, HOMOLOSINE_PHI } from '../projections/adjusted.js';
+import { ENTRY_NOTES, STEP_NOTES, SYMBOLS } from './formulaNotes.js';
 import { getState, subscribe, frame, caption, entry, rootEntry, derivation, STAGE_LABELS } from '../state.js';
 
 const D = Math.PI / 180;
@@ -35,6 +36,9 @@ function renderTex(container, tex) {
   catch (e) { container.textContent = tex; }
   fitTex(container);
   lastTexContainer = container;
+  // KaTeX 웹폰트가 늦게 오면 폭이 달라지므로 다시 맞춘다
+  requestAnimationFrame(() => fitTex(container));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitTex(container));
 }
 window.addEventListener('resize', () => { if (lastTexContainer) fitTex(lastTexContainer); });
 
@@ -221,7 +225,25 @@ export function mountSidePanel(container) {
   const stageTitle = el('div', 'sp-stage');
   const cap = el('p', 'sp-caption');
   const badge = el('div', 'sp-badge');
+  const texWrap = el('div', 'sp-texwrap');
   const tex = el('div', 'sp-tex');
+  tex.title = '클릭하면 수식 설명';
+  const texToggle = el('button', 'sp-tex-toggle', '이 수식은? 설명 보기');
+  texToggle.type = 'button';
+  const texNote = el('div', 'sp-texnote');
+  texWrap.append(tex, texToggle, texNote);
+  let noteOpen = false, currentNote = '';
+  const renderNote = () => {
+    const has = !!currentNote;
+    texToggle.style.display = has && tex.style.display !== 'none' ? '' : 'none';
+    texNote.style.display = has && noteOpen ? '' : 'none';
+    texToggle.textContent = noteOpen ? '설명 접기' : '이 수식은? 설명 보기';
+    texToggle.classList.toggle('on', noteOpen);
+    if (has && noteOpen) texNote.innerHTML = `<div class="sp-texnote-sym">${SYMBOLS}</div>${currentNote}`;
+  };
+  const toggleNote = () => { noteOpen = !noteOpen; renderNote(); };
+  tex.addEventListener('click', toggleNote);
+  texToggle.addEventListener('click', toggleNote);
   const panel = el('div', 'sp-panel');
   const readout = el('div', 'sp-readout');
   const copy = el('div', 'sp-copy');
@@ -229,7 +251,7 @@ export function mountSidePanel(container) {
   const link = el('a', null, 'https://bgnl.kr');
   link.href = 'https://bgnl.kr'; link.target = '_blank'; link.rel = 'noopener';
   copy.appendChild(link);
-  root.append(head, stageTitle, cap, badge, tex, panel, readout, copy);
+  root.append(head, stageTitle, cap, badge, texWrap, panel, readout, copy);
   container.appendChild(root);
 
   // 패널 요소들
@@ -295,6 +317,16 @@ export function mountSidePanel(container) {
     if (texKey !== lastKey) {
       lastKey = texKey;
       renderTex(tex, fr.stepInfo ? fr.stepInfo.formulaTex : (s.stage === 'adjust' ? e.formulaTex : r.formulaTex));
+      // 수식 설명: 단계 설명 → 단계 목표 도법 설명 → 도법 설명 순으로 찾는다
+      if (fr.stepInfo) {
+        const derivId = e.derivation;
+        const stepNote = STEP_NOTES[derivId] && STEP_NOTES[derivId][fr.stepInfo.index];
+        const target = fr.stepInfo.morph && fr.stepInfo.morph.to;
+        currentNote = stepNote || (target && ENTRY_NOTES[target]) || (fr.stepInfo.formulaTex ? ENTRY_NOTES[e.id] : '') || '';
+      } else {
+        currentNote = ENTRY_NOTES[s.stage === 'adjust' ? e.id : r.id] || '';
+      }
+      renderNote();
     }
 
     const p = fr.stepInfo ? fr.stepInfo.panel : 'none';

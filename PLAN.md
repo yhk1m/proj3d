@@ -193,6 +193,7 @@ js/
     picker.js              # 도법 선택기
     controls.js            # 표준위선·aspect·광원 슬라이더
     sidePanel.js           # 수식, 그래프, 표
+    formulaNotes.js        # 수식 설명(클릭해서 펼침) — 도법별·조정 단계별
     compare.js             # 비교 모드
   util/tween.js
 tests/verify.html          # 12장 수치 검증 페이지

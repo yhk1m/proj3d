@@ -379,6 +379,32 @@ function entryProjection(entry, params) {
   return { f: (lam, phi) => entry.forward(lam, phi, params), domain: domainOf(entry, params), entry };
 }
 
+/**
+ * 모핑 중 도메인이 넓어질 때, 출발 도법을 자기 도메인 밖에서 평가하면 발산·반전(예: 중심원추 φ < φ₀ − 90°)해
+ * 화면이 튄다. 그래서 각 끝점 도법은 자기 도메인 경계로 좌표를 붙들어(clamp) 평가한다 — 새 위도는 경계에서 펼쳐진다.
+ */
+export function clampToDomain(f, domain) {
+  if (!domain) return f;
+  const cap = domain.kind === 'cap' && domain.maxAngularDist != null;
+  const { phiMin, phiMax } = domain, cmax = domain.maxAngularDist;
+  return (lam, phi) => {
+    let l = lam, p = Math.max(phiMin, Math.min(phiMax, phi));
+    if (cap) {
+      const cp = Math.cos(p);
+      const cosc = cp * Math.cos(l);
+      const c = Math.acos(Math.max(-1, Math.min(1, cosc)));
+      if (c > cmax) {
+        const sc = Math.sin(c) || 1e-12;
+        const ax = (cp * Math.sin(l)) / sc, ay = Math.sin(p) / sc;   // 방위 방향(단위)
+        const s2 = Math.sin(cmax);
+        l = Math.atan2(ax * s2, Math.cos(cmax));
+        p = Math.asin(Math.max(-1, Math.min(1, ay * s2)));
+      }
+    }
+    return f(l, p);
+  };
+}
+
 /** 단계 k 가 끝난 뒤의 투영 (k = −1 이면 root) */
 export function endOfStep(deriv, k, params) {
   if (k < 0) return entryProjection(PROJECTIONS[deriv.root], params);
@@ -403,7 +429,7 @@ export function stepProjection(deriv, k, t, params) {
   if (!m || t <= 0) return prev;
   if (m.type === 'lerp') {
     const target = entryProjection(PROJECTIONS[m.to], params);
-    const fa = prev.f, fb = target.f;
+    const fa = clampToDomain(prev.f, prev.domain), fb = clampToDomain(target.f, target.domain);
     return {
       f: (lam, phi) => {
         const a = fa(lam, phi), b = fb(lam, phi);
@@ -414,7 +440,10 @@ export function stepProjection(deriv, k, t, params) {
   }
   if (m.type === 'equalAreaFamily') {
     const target = entryProjection(PROJECTIONS[m.to], params);
-    return { f: equalAreaMorph(prev.f, target.f, t), domain: lerpDomain(prev.domain, target.domain, t) };
+    return {
+      f: equalAreaMorph(clampToDomain(prev.f, prev.domain), clampToDomain(target.f, target.domain), t),
+      domain: lerpDomain(prev.domain, target.domain, t),
+    };
   }
   if (m.type === 'custom') {
     const pf = prev.f;
