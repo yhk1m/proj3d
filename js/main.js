@@ -257,7 +257,7 @@ async function main() {
       moveGroup.position.set(0, 0, 0);
     }
     compare.update(fr, ctx);
-    rig.setTarget(fr, s, paperBox());
+    rig.setTarget(fr, s, paperBox(), paper.gridPos);
 
     if (lastFrame === null || fr.root !== lastFrame.root || fr.params !== lastFrame.params) assertCollinear(fr);
     if (fr.stepInfo && fr.stepInfo.panel === 'areaRatio') renderAreaRatio();
@@ -321,7 +321,7 @@ async function main() {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    if (currentFrame) rig.setTarget(currentFrame, getState(), paperBox());
+    if (currentFrame) rig.setTarget(currentFrame, getState(), paperBox(), paper.gridPos);
   }
   window.addEventListener('resize', resize);
   resize();

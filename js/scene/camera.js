@@ -40,7 +40,7 @@ export class CameraRig {
    * 상태가 바뀔 때 호출해 목표 자세를 계산한다.
    *  fr: state.frame(), s: state, box: 종이 bbox(프레임 좌표, 이동 오프셋 제외)
    */
-  setTarget(fr, s, box) {
+  setTarget(fr, s, box, points = null) {
     const cam = this.camera, d = this.desired;
     const g = coneGeometry(fr.surface, fr.params);
     const cone = g.kind === 'cone';
@@ -52,31 +52,49 @@ export class CameraRig {
     // ---- 3D 자세: 지구본(반지름 1, 광원 포함) ∪ 종이 상자를 비스듬히 본다. 상자 꼭짓점을 화면 축에 투영해 꽉 채운다 ----
     const mn = [Math.min(-1, box.min[0] + off.x), Math.min(-1, box.min[1] + off.y), Math.min(-1, box.min[2] + off.z)];
     const mx = [Math.max(1, box.max[0] + off.x), Math.max(1, box.max[1] + off.y), Math.max(1, box.max[2] + off.z)];
+    const dLight = fr.light && fr.light.type === 'point' ? (fr.params.d ?? fr.light.d) : 0;
     // 광원도 상자에 넣는다: 평면 도법의 점광원(축 위 −d)·평행광의 광원 원판(z = −3, 반지름 1.25)
     if (plane && fr.light && fr.light.type === 'point') {
-      const d = fr.light.d === Infinity ? PARALLEL_LIGHT_DIST : (fr.params.d === Infinity ? PARALLEL_LIGHT_DIST : (fr.params.d ?? fr.light.d));
-      const r = fr.light.d === Infinity || fr.params.d === Infinity ? 1.25 : 0.4;
-      mn[0] = Math.min(mn[0], -r); mn[1] = Math.min(mn[1], -r); mn[2] = Math.min(mn[2], -d - 0.1);
+      const dl = dLight === Infinity ? PARALLEL_LIGHT_DIST : dLight;
+      const r = dLight === Infinity ? 1.25 : 0.45;
+      mn[0] = Math.min(mn[0], -r); mn[1] = Math.min(mn[1], -r); mn[2] = Math.min(mn[2], -dl - 0.1);
       mx[0] = Math.max(mx[0], r); mx[1] = Math.max(mx[1], r);
     }
     const c3 = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
-    // 평면: 광원이 축 위 접점 반대쪽(대척점·무한원)에 있을 수 있으므로 옆에서 보아 광원·지구본·원판이 한눈에 들어오게
+    // 평면: 광원이 지구 뒤(대척점·무한원)에 있으면 거의 옆에서 보아 광원 → 지구본 → 원판 순서가 한눈에 들어오게,
+    //       광원이 지구 안(심사)이면 원판 면이 보이도록 조금 위에서
     // 원뿔: 절개선(부채꼴의 두 반지름이 만나는 자리, λ' = ±180°)이 뒤쪽이라 뒤에서 보아 우산이 닫히며 두 변이 붙는 모습이 정면에 오게
-    const dir3 = plane ? [0.9, 0.5, 0.55] : cone ? [0.36, 0.3, -1] : [0.36, 0.28, 1];
+    const lightBehind = plane && dLight >= 0.5;
+    const dir3 = plane ? (lightBehind ? [0.95, 0.42, 0.28] : [0.9, 0.5, 0.55]) : cone ? [0.36, 0.3, -1] : [0.36, 0.28, 1];
     const n3 = Math.hypot(...dir3);
     const dz = [dir3[0] / n3, dir3[1] / n3, dir3[2] / n3];            // 카메라 → 대상 반대 방향(프레임 좌표)
     const upHint = Math.abs(dz[1]) > 0.9 ? [0, 0, -1] : [0, 1, 0];
     let rx = [upHint[1] * dz[2] - upHint[2] * dz[1], upHint[2] * dz[0] - upHint[0] * dz[2], upHint[0] * dz[1] - upHint[1] * dz[0]];
     const rl = Math.hypot(...rx); rx = [rx[0] / rl, rx[1] / rl, rx[2] / rl];
     const uy = [dz[1] * rx[2] - dz[2] * rx[1], dz[2] * rx[0] - dz[0] * rx[2], dz[0] * rx[1] - dz[1] * rx[0]];
+    // 화면 축에 투영한 반폭. 종이는 상자 꼭짓점 대신 실제 정점을 쓴다(비스듬히 본 원판은 상자보다 훨씬 얇다).
     let hx = 0, hy = 0, near = -Infinity;
-    for (const cx of [mn[0], mx[0]]) for (const cy of [mn[1], mx[1]]) for (const cz of [mn[2], mx[2]]) {
-      const vx = cx - c3[0], vy = cy - c3[1], vz = cz - c3[2];
+    const accum = (px, py, pz) => {
+      const vx = px - c3[0], vy = py - c3[1], vz = pz - c3[2];
       hx = Math.max(hx, Math.abs(vx * rx[0] + vy * rx[1] + vz * rx[2]));
       hy = Math.max(hy, Math.abs(vx * uy[0] + vy * uy[1] + vz * uy[2]));
       near = Math.max(near, vx * dz[0] + vy * dz[1] + vz * dz[2]);
+    };
+    if (points) {
+      for (let i = 0; i < points.length; i += 3) if (!Number.isNaN(points[i])) accum(points[i] + off.x, points[i + 1] + off.y, points[i + 2] + off.z);
+    } else {
+      for (const cx of [box.min[0], box.max[0]]) for (const cy of [box.min[1], box.max[1]]) for (const cz of [box.min[2], box.max[2]]) accum(cx + off.x, cy + off.y, cz + off.z);
     }
-    const dist3 = Math.max(2.6, Math.max(hy / Math.tan(fovV / 2), hx / Math.tan(fovH / 2)) * 1.08 + near + 0.2);
+    // 지구본(반지름 1 구)과 광원
+    for (const sx of [-1, 1]) { accum(sx, 0, 0); accum(0, sx, 0); accum(0, 0, sx); }
+    accum(c3[0] + rx[0], c3[1] + rx[1], c3[2] + rx[2]); accum(c3[0] - rx[0], c3[1] - rx[1], c3[2] - rx[2]);
+    accum(c3[0] + uy[0], c3[1] + uy[1], c3[2] + uy[2]); accum(c3[0] - uy[0], c3[1] - uy[1], c3[2] - uy[2]);
+    if (plane && fr.light && fr.light.type === 'point') {
+      const dl = dLight === Infinity ? PARALLEL_LIGHT_DIST : dLight;
+      const r = dLight === Infinity ? 1.25 : 0.45;
+      accum(r, r, -dl - 0.1); accum(-r, -r, -dl - 0.1); accum(r, -r, -dl); accum(-r, r, -dl);
+    }
+    const dist3 = Math.max(2.6, Math.max(hy / Math.tan(fovV / 2), hx / Math.tan(fovH / 2)) * 1.12 + near + 0.25);
     const pos3 = [c3[0] + dz[0] * dist3, c3[1] + dz[1] * dist3, c3[2] + dz[2] * dist3];
 
     // ---- 정면 자세: 종이 평면을 꽉 채우고, 지구본은 왼쪽 위에 작게 ----
