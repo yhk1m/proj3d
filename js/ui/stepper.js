@@ -1,6 +1,6 @@
 // © 2026 김용현
 // ui/stepper.js — 단계 버튼 + 스크러버 + 재생 (PLAN 7장). 모든 단계는 버튼 재생과 슬라이더 스크럽 둘 다 지원한다.
-import { getState, subscribe, timeline, timelineIndex, goTo, next, prev, setT, togglePlay, setState, stageLabel, derivation } from '../state.js';
+import { getState, subscribe, timeline, timelineIndex, goTo, next, prev, setT, togglePlay, setState, stageLabel, derivation, isRunning } from '../state.js';
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -82,7 +82,7 @@ export function mountStepper(container) {
     if (parseInt(scrub.value, 10) !== v) scrub.value = v;
     scrub.disabled = s.stage === 'flat';
     tval.textContent = s.stage === 'flat' ? '—' : `${Math.round(s.t * 100)}%`;
-    bPlay.innerHTML = s.playing ? ICON.pause : ICON.play;
+    bPlay.innerHTML = isRunning() ? ICON.pause : ICON.play;   // 자동 재생 대기 중에도 일시정지 아이콘
     if (autoInput.checked !== !!s.autoplay) autoInput.checked = !!s.autoplay;
   }
   subscribe(render);

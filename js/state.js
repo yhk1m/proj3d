@@ -136,7 +136,7 @@ function applyStepSideEffects() {
 export function next(play = true) {
   const tl = timeline();
   const i = timelineIndex();
-  if (state.stage !== 'flat' && state.t < 1) { state.t = 1; state.playing = 0; notify(); return; }
+  if (state.stage !== 'flat' && state.t < 1) { state.t = 1; state.playing = 0; holdTimer = 0; notify(); return; }
   if (i + 1 >= tl.length) { state.playing = 0; notify(); return; }
   const n = tl[i + 1];
   goTo(n.stage, n.step, 0, play);
@@ -146,7 +146,7 @@ export function next(play = true) {
 export function prev() {
   const tl = timeline();
   const i = timelineIndex();
-  if (state.stage !== 'flat' && state.t > 0) { state.t = 0; state.playing = 0; notify(); return; }
+  if (state.stage !== 'flat' && state.t > 0) { state.t = 0; state.playing = 0; holdTimer = 0; notify(); return; }
   if (i <= 0) return;
   const p = tl[i - 1];
   goTo(p.stage, p.step, p.stage === 'flat' ? 0 : 1, false);
@@ -155,6 +155,7 @@ export function prev() {
 export function setT(t) {
   state.t = Math.max(0, Math.min(1, t));
   state.playing = 0;
+  holdTimer = 0;
   notify();
 }
 
@@ -166,8 +167,11 @@ export function play(direction = 1) {
   notify();
 }
 
-export function pause() { state.playing = 0; notify(); }
-export function togglePlay() { if (state.playing) pause(); else play(1); }
+/** 진행 중인가 — 재생 중이거나, 자동 재생이 다음 단계를 기다리는 중(HOLD_AFTER). 리모컨의 일시정지 아이콘 기준. */
+export function isRunning() { return !!state.playing || holdTimer > 0; }
+/** 그 자리에서 멈춤. 자동 재생 대기도 취소한다(대기 중 누르면 다음 단계로 점프하던 문제). */
+export function pause() { holdTimer = 0; state.playing = 0; notify(); }
+export function togglePlay() { if (isRunning()) pause(); else play(1); }
 
 /** 렌더 루프에서 호출. dt 초. */
 export function tick(dt) {

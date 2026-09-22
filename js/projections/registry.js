@@ -135,7 +135,7 @@ export const PROJECTIONS = {
     params: { d: 0 }, domain: perspectiveCap,
     forward: P.azimuthalPerspective, derivation: null,
     formulaTex: 'r = \\tan c',
-    captionKo: '지구 중심의 빛이 접평면에 그린 지도. 모든 대권이 직선 → 최단 항로를 자로 그을 수 있음. 접점에서 60° 밖은 그릴 수 없음.',
+    captionKo: '지구 중심의 빛이 접평면에 그린 지도. 모든 대권이 직선 → 최단 항로를 자로 그을 수 있음. 반구 경계(90°)는 무한대라 그릴 수 없고, 60° 만 넘어도 왜곡이 극심해 여기서는 60° 안만 그림.',
   },
   stereographic: {
     id: 'stereographic', nameKo: '평사도법', family: 'azimuthal', property: 'conformal',
@@ -197,7 +197,7 @@ export const PROJECTIONS = {
     surface: null, light: null, params: {}, domain: rect(-90, 90),
     forward: A.equalEarth, derivation: 'equalEarthFromLambert', modern: true,
     formulaTex: '\\begin{gathered}\\sin\\theta = \\tfrac{\\sqrt3}{2}\\sin\\varphi\\\\[2pt] y = A_1\\theta + A_2\\theta^3 + A_3\\theta^7 + A_4\\theta^9\\end{gathered}',
-    captionKo: '2018년 발표된 정적도법. 로빈슨의 친숙한 외형을 다항식으로 흉내 내면서 면적은 정확히 지킴.',
+    captionKo: '2018년 발표된 정적도법. 로빈슨의 친숙한 외형을 본보기로 삼되(로빈슨을 고친 것이 아님), 정적 조건 위에서 다항식으로 새로 설계해 면적을 정확히 지킴.',
   },
   robinson: {
     id: 'robinson', nameKo: '로빈슨 도법', family: 'pseudocylindrical', property: 'compromise',

@@ -17,6 +17,7 @@ import { GOODE_CUTS, goodeLobeIndex, goodeHomolosine, homolosine } from '../js/p
 import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../js/geometry/mesh.js';
 import { makeGridParam, positionOf } from '../js/geometry/pipeline.js';
 import { layoutSpacingGraph } from '../js/ui/graphLayout.js';
+import * as S from '../js/state.js';
 
 const D = Math.PI / 180;
 const HALF_PI = Math.PI / 2;
@@ -530,6 +531,40 @@ function testGraphLabels() {
 }
 
 // ---------------------------------------------------------------------------
+// 13. 리모컨 재생 상태: 일시정지·이전·스크럽은 진행을 그 자리에서 멈춰야 한다 — 자동 재생의 "한 단계 끝 → 1초 뒤 다음 단계" 대기 중에도.
+function testPlayback() {
+  const sec = '13. 리모컨 재생';
+  const run = (secs) => { for (let i = 0; i < secs / 0.05; i++) S.tick(0.05); };
+  const finishStep = () => { S.setState({ autoplay: true }); S.goTo('wrap', 0, 0.9, true); run(0.5); };   // 씌우기 2.4초 → 0.1 남음 → 끝나고 대기 시작
+  S.selectProjection('mercator');
+  // (a) 대기 중 상태는 "진행 중"으로 보여야 한다(일시정지 아이콘)
+  finishStep();
+  let s = S.getState();
+  report(sec, '단계 끝 → 자동 재생 대기 중 = 진행 중(isRunning)', s.t >= 1 && s.stage === 'wrap' && typeof S.isRunning === 'function' && S.isRunning(), `t=${s.t} stage=${s.stage}`);
+  // (b) 대기 중 일시정지 → 다음 단계로 넘어가지 않고 그 자리(t = 1)에 머문다
+  S.togglePlay(); run(2);
+  s = S.getState();
+  report(sec, '대기 중 일시정지 → 씌우기 t=1 에 머묾(다음 단계로 점프 없음)', s.stage === 'wrap' && s.t >= 1 && !s.playing, `stage=${s.stage} t=${s.t} playing=${s.playing}`);
+  // (c) 대기 중 이전 → 처음으로 되돌린 뒤 자동으로 다음 단계로 넘어가지 않는다
+  finishStep(); S.prev(); run(2);
+  s = S.getState();
+  report(sec, '대기 중 이전 → 씌우기 t=0 에 머묾', s.stage === 'wrap' && s.t === 0 && !s.playing, `stage=${s.stage} t=${s.t}`);
+  // (d) 대기 중 스크럽 → 그 위치에 머문다
+  finishStep(); S.setT(0.5); run(2);
+  s = S.getState();
+  report(sec, '대기 중 스크럽 0.5 → 씌우기 t=0.5 에 머묾', s.stage === 'wrap' && Math.abs(s.t - 0.5) < 1e-9 && !s.playing, `stage=${s.stage} t=${s.t}`);
+  // (e) 개입이 없으면 자동 재생은 여전히 다음 단계로 이어진다
+  finishStep(); run(2);
+  s = S.getState();
+  report(sec, '개입 없음 → 1초 뒤 다음 단계(빛 투영) 재생', s.stage === 'project' && s.playing === 1, `stage=${s.stage} playing=${s.playing}`);
+  // (f) 재생 중 일시정지 → 그 자리
+  S.goTo('wrap', 0, 0, true); run(1); S.pause(); const tp = S.getState().t; run(1);
+  s = S.getState();
+  report(sec, '재생 중 일시정지 → 그 자리에 머묾', s.stage === 'wrap' && s.t === tp && tp > 0 && tp < 1, `t=${s.t}`);
+  S.pause(); S.goTo('flat', 0, 0, false);
+}
+
+// ---------------------------------------------------------------------------
 export async function runAll({ loadJSON } = {}) {
   results.length = 0;
   testBendIsometry();
@@ -547,5 +582,6 @@ export async function runAll({ loadJSON } = {}) {
   testClipAndArea(land, countries);
   testGoode(land);
   testGraphLabels();
+  testPlayback();
   return results.slice();
 }

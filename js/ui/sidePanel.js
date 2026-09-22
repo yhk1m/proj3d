@@ -329,7 +329,9 @@ export function mountSidePanel(container) {
     chips.appendChild(el('span', 'chip-i', FAMILY_LABELS[e.family]));
     const pb = propertyBadge(e); if (pb) chips.appendChild(pb);
     const lb = lightBadge(e);
-    chips.appendChild(lb || el('span', 'chip-i', `조정 ← ${r.nameKo}`));
+    const dc = lb || el('span', 'chip-i', `조정 ← ${r.nameKo}`);
+    if (!lb) dc.title = `이 앱의 구성 — 빛으로 만들 수 있는 ${r.nameKo}에서 출발해 수학적 조정으로 이끌어 냄. 실제 고안 과정의 순서는 아님`;
+    chips.appendChild(dc);
     if (fr.stepInfo) stageTitle.textContent = `${STAGE_LABELS.adjust} — ${fr.stepInfo.titleKo}`;
     else stageTitle.textContent = STAGE_LABELS[s.stage] + (s.stage !== 'flat' && s.stage !== 'adjust' ? ` — ${r.nameKo}` : '');
     cap.textContent = caption();

@@ -131,15 +131,15 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '① 눌린 고위도를 세로로 다시 벌림 (정적성 유지)',
-        captionKo: '면적은 정확하지만 고위도가 납작한 상태. 고위도를 세로로 벌리되, 면적을 지키려면 세로로 늘린 만큼 가로를 줄여야 함: x = λ·cos φ / Y′(φ). 모핑 내내 티소 타원의 넓이는 그대로.',
+        captionKo: '실제 Equal Earth(2018)는 람베르트를 고친 것이 아니라, 정적 조건 위에서 로빈슨과 닮은 외형을 목표로 새로 설계한 도법. 여기서는 빛으로 만들 수 있는 정적 도법(람베르트)에서 출발해 그 조건을 재현: 납작한 고위도를 세로로 벌리되, 면적을 지키려면 늘린 만큼 가로를 줄임 — x = λ·cos φ / Y′(φ). 모핑 내내 티소 타원의 넓이는 그대로.',
         formulaTex: 'y = Y(\\varphi),\\qquad x = \\lambda\\,\\frac{\\cos\\varphi}{Y\'(\\varphi)}',
         morph: { type: 'equalAreaFamily', to: 'equalEarth' },
         panel: 'spacingGraph',
         badgeKo: '면적배율 1.00 유지',
       },
       {
-        titleKo: '② 로빈슨 도법과 외형 비교',
-        captionKo: '로빈슨처럼 친숙한 외형을 목표로 다항식 계수 4개(A₁~A₄)를 정함. 빨간 선 = 로빈슨. 외형은 비슷하지만 이쪽은 면적이 정확.',
+        titleKo: '② 로빈슨을 본보기로 한 외형',
+        captionKo: '설계 목표는 "로빈슨처럼 친숙하되 면적이 정확한 세계지도". 극선·완만한 경선·가로세로비 약 2:1 을 로빈슨에서 본뜨고, 세로 간격 다항식의 계수 4개(A₁~A₄)를 시각적 방법으로 정함. 빨간 선 = 로빈슨. 로빈슨은 정적이 아니라 로빈슨을 조금 고쳐 정적으로 만들 수는 없음 — 외형만 본보기.',
         formulaTex: 'A_1 = 1.340264,\\; A_2 = -0.081106,\\; A_3 = 0.000893,\\; A_4 = 0.003796',
         morph: null,
         panel: 'none',
@@ -162,7 +162,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '① 등장방형으로 조정',
-        captionKo: '먼저 위선 간격을 균등하게 되돌림(등장방형). 로빈슨의 출발점.',
+        captionKo: '먼저 위선 간격을 균등하게 되돌림(등장방형). 로빈슨 표는 위선의 위치와 길이만 정하므로, 여기서는 등장방형을 바탕 격자로 삼음.',
         formulaTex: 'y = \\tan\\varphi \\;\\longrightarrow\\; y = \\varphi',
         morph: { type: 'lerp', to: 'equirectangular' },
         panel: 'spacingGraph',
