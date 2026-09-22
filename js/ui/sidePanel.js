@@ -8,6 +8,7 @@ import { aitoff, mollweide, goodeHomolosine, GOODE_LOBES_DEG, HOMOLOSINE_PHI } f
 import { ENTRY_NOTES, STEP_NOTES, SYMBOLS } from './formulaNotes.js';
 import { propertyBadge, lightBadge } from './picker.js';
 import { USAGE_NOTES } from './usageNotes.js';
+import { layoutSpacingGraph, GRAPH_FONT_PX } from './graphLayout.js';
 import { getState, subscribe, frame, caption, entry, rootEntry, derivation, STAGE_LABELS, lightDescription } from '../state.js';
 
 const LIGHT_ICONS = {
@@ -167,21 +168,23 @@ function drawSpacingGraph(canvas, fr, s) {
   const clampMax = azimuthal ? 4 : 3.2;
   ymin = Math.max(ymin, -clampMax); ymax = Math.min(ymax, clampMax);
   if (ymax - ymin < 1e-6) { ymax += 1; ymin -= 1; }
-  const pad = { l: 38, r: 10, t: 12, b: 26 };
   const x0 = xs[0], x1 = xs[xs.length - 1];
-  const px = (x) => pad.l + ((x - x0) / (x1 - x0)) * (W - pad.l - pad.r);
-  const py = (y) => H - pad.b - ((y - ymin) / (ymax - ymin)) * (H - pad.t - pad.b);
+  const ticks = azimuthal ? [0, 60, 120, 180] : [-90, -45, 0, 45, 90];
+  // 글자 배치(겹침 없는 줄 구성)는 graphLayout.js 가 정한다
+  ctx.font = `${GRAPH_FONT_PX}px Pretendard, sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  const { pad, px, py, texts, swatches } = layoutSpacingGraph({
+    W, H, xLabel, yLabel, ticks, x0, x1, ymin, ymax, legend: curves, measure: (t) => ctx.measureText(t).width,
+  });
   // 축
   ctx.strokeStyle = 'rgba(169,182,204,0.35)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.lineTo(W - pad.r, H - pad.b); ctx.stroke();
   if (ymin < 0 && ymax > 0) { ctx.beginPath(); ctx.moveTo(pad.l, py(0)); ctx.lineTo(W - pad.r, py(0)); ctx.stroke(); }
-  ctx.fillStyle = 'rgba(169,182,204,0.9)'; ctx.font = '11px Pretendard, sans-serif';
-  ctx.fillText(xLabel, W - pad.r - 70, H - 8);
-  ctx.fillText(yLabel, 4, pad.t + 4);
-  const ticks = azimuthal ? [0, 60, 120, 180] : [-90, -45, 0, 45, 90];
-  for (const tx of ticks) { ctx.fillText(`${tx}°`, px(tx) - 8, H - pad.b + 14); }
-  ctx.fillText(ymax.toFixed(1), 4, py(ymax) + 4);
-  ctx.fillText(ymin.toFixed(1), 4, py(ymin) + 4);
+  // 축 이름·눈금·범위 값·범례 글자
+  for (const t of texts) {
+    ctx.fillStyle = t.role === 'legend' ? 'rgba(232,237,245,0.9)' : 'rgba(169,182,204,0.9)';
+    ctx.fillText(t.text, t.x, t.y);
+  }
+  for (const s of swatches) { ctx.fillStyle = s.color; ctx.fillRect(s.x, s.y, s.w, s.h); }
   // 곡선
   for (const c of curves) {
     ctx.strokeStyle = c.color; ctx.lineWidth = c.width;
@@ -193,13 +196,6 @@ function drawSpacingGraph(canvas, fr, s) {
       if (!pen) { ctx.moveTo(px(x), py(v)); pen = true; } else ctx.lineTo(px(x), py(v));
     }
     ctx.stroke();
-  }
-  // 범례
-  let lx = pad.l + 6;
-  for (const c of curves) {
-    ctx.fillStyle = c.color; ctx.fillRect(lx, pad.t, 14, 3);
-    ctx.fillStyle = 'rgba(232,237,245,0.9)'; ctx.fillText(c.label, lx + 18, pad.t + 5);
-    lx += 62;
   }
 }
 

@@ -16,6 +16,7 @@ import { coastlines, splitLines, splitAtCuts, hasSeamCrossing, countryRings, pro
 import { GOODE_CUTS, goodeLobeIndex, goodeHomolosine, homolosine } from '../js/projections/adjusted.js';
 import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../js/geometry/mesh.js';
 import { makeGridParam, positionOf } from '../js/geometry/pipeline.js';
+import { layoutSpacingGraph } from '../js/ui/graphLayout.js';
 
 const D = Math.PI / 180;
 const HALF_PI = Math.PI / 2;
@@ -490,6 +491,45 @@ function testGoode(land) {
 }
 
 // ---------------------------------------------------------------------------
+// 12. 측면 패널 간격 그래프: 축 이름·눈금·최댓값·범례 글자가 서로 겹치지 않고 캔버스 안에 들어와야 한다.
+// 글자 폭은 Pretendard 11px 근사치(한글 11, 숫자·영문 6.2, 기호 축소)로 잰다.
+function estimateTextWidth(text) {
+  let w = 0;
+  for (const ch of text) {
+    const c = ch.codePointAt(0);
+    if (c >= 0x3000) w += 11;                 // 한글·CJK
+    else if (ch === '°') w += 4.5;
+    else if (ch === '(' || ch === ')' || ch === ' ' || ch === '.') w += 3.5;
+    else w += 6.2;
+  }
+  return w;
+}
+function rectsOverlap(a, b) {
+  return a.left < b.left + b.w && b.left < a.left + a.w && a.top < b.top + b.h && b.top < a.top + a.h;
+}
+function testGraphLabels() {
+  const legend = [{ label: '출발', color: '#aab' }, { label: '목표', color: '#7ea' }, { label: '현재', color: '#fd6' }];
+  const cases = [
+    { name: '원통·원뿔 (φ, y = −3.2…3.2)', xLabel: 'φ', yLabel: 'y(φ)', ticks: [-90, -45, 0, 45, 90], x0: -90, x1: 90, ymin: -3.2, ymax: 3.2 },
+    { name: '원통·원뿔 (φ, y = −0.5…1.0)', xLabel: 'φ', yLabel: 'y(φ)', ticks: [-90, -45, 0, 45, 90], x0: -90, x1: 90, ymin: -0.5, ymax: 1.0 },
+    { name: '방위 (c, r = 0…4.0)', xLabel: 'c (접점 각거리)', yLabel: 'r(c)', ticks: [0, 60, 120, 180], x0: 0, x1: 180, ymin: 0, ymax: 4 },
+  ];
+  for (const c of cases) {
+    const W = 300, H = 180;
+    const L = layoutSpacingGraph({ W, H, ...c, legend, measure: estimateTextWidth });
+    const boxes = [...L.texts, ...L.swatches.map((s) => ({ role: 'swatch', text: '■', left: s.x, top: s.y, w: s.w, h: s.h }))];
+    const outside = boxes.filter((b) => b.left < 0 || b.top < 0 || b.left + b.w > W || b.top + b.h > H);
+    report('12. 간격 그래프 글자', `${c.name}: 모든 글자가 캔버스 안`, outside.length === 0,
+      outside.map((b) => `${b.role} "${b.text}" [${b.left.toFixed(0)}..${(b.left + b.w).toFixed(0)}]`).join(', '));
+    const pairs = [];
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      if (rectsOverlap(boxes[i], boxes[j])) pairs.push(`${boxes[i].role} "${boxes[i].text}" × ${boxes[j].role} "${boxes[j].text}"`);
+    }
+    report('12. 간격 그래프 글자', `${c.name}: 겹치는 글자 없음`, pairs.length === 0, pairs.join(', '));
+  }
+}
+
+// ---------------------------------------------------------------------------
 export async function runAll({ loadJSON } = {}) {
   results.length = 0;
   testBendIsometry();
@@ -506,5 +546,6 @@ export async function runAll({ loadJSON } = {}) {
   }
   testClipAndArea(land, countries);
   testGoode(land);
+  testGraphLabels();
   return results.slice();
 }
