@@ -146,9 +146,11 @@ export function mountPicker(container) {
   document.addEventListener('pointerdown', (ev) => { if (openState && !wrap.contains(ev.target)) close(); });
   window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && openState) close(); });
 
+  let syncedId = null;
   function sync(s) {
     const e = PROJECTIONS[s.projection];
-    if (!e) return;
+    if (!e || s.projection === syncedId) return;   // 도법이 바뀔 때만 다시 그림(재생 중 매 프레임 배지를 재생성하면 클릭이 유실됨)
+    syncedId = s.projection;
     btnName.textContent = e.nameKo;
     btnBadges.innerHTML = '';
     btnBadges.appendChild(badges(e));

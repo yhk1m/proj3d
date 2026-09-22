@@ -52,6 +52,7 @@ export function mountStepper(container) {
   });
 
   let stageKey = null;
+  let lastRunning = null;
   function render(s) {
     const tl = timeline();
     const d = derivation();
@@ -82,7 +83,10 @@ export function mountStepper(container) {
     if (parseInt(scrub.value, 10) !== v) scrub.value = v;
     scrub.disabled = s.stage === 'flat';
     tval.textContent = s.stage === 'flat' ? '—' : `${Math.round(s.t * 100)}%`;
-    bPlay.innerHTML = isRunning() ? ICON.pause : ICON.play;   // 자동 재생 대기 중에도 일시정지 아이콘
+    // 아이콘은 상태가 바뀔 때만 교체한다. 재생 중 매 프레임 innerHTML 을 다시 쓰면 mousedown 으로 누른 SVG 가
+    // mouseup 전에 사라져 브라우저가 click 을 버림 → 재생 중 일시정지 버튼이 먹지 않던 원인.
+    const running = isRunning();                               // 자동 재생 대기 중에도 일시정지 아이콘
+    if (running !== lastRunning) { lastRunning = running; bPlay.innerHTML = running ? ICON.pause : ICON.play; }
     if (autoInput.checked !== !!s.autoplay) autoInput.checked = !!s.autoplay;
   }
   subscribe(render);
