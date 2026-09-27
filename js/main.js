@@ -16,6 +16,7 @@ import { MapLayer } from './scene/mapLayer.js';
 import { Rays } from './scene/rays.js';
 import { Tissot } from './scene/tissot.js';
 import { CameraRig } from './scene/camera.js';
+import { PivotMarker, installPivotPicking } from './scene/pivot.js';
 import { mountPicker } from './ui/picker.js';
 import { mountControls, mountUtilControls } from './ui/controls.js';
 import { mountStepper } from './ui/stepper.js';
@@ -42,8 +43,8 @@ async function loadJSON(url) {
   return r.json();
 }
 
-/** 뷰포트 위 시점 도구: 자동 맞춤 · 확대 · 축소 + 조작 안내 */
-function mountViewTools(viewport, rig) {
+/** 뷰포트 위 시점 도구: 자동 맞춤 · 확대 · 축소 · 중심점 숨기기 + 조작 안내 */
+function mountViewTools(viewport, rig, { hidePivot, onHidePivot }) {
   const box = document.createElement('div');
   box.id = 'viewtools';
   const mk = (title, svg, fn) => {
@@ -56,9 +57,19 @@ function mountViewTools(viewport, rig) {
   const fitBtn = mk('시점 자동 맞춤 — 단계마다 광원·지구본·종이가 보이게 카메라를 맞춤 (드래그하면 해제)', ICONS.fit, () => rig.fit());
   mk('확대', ICONS.plus, () => rig.zoom(0.8));
   mk('축소', ICONS.minus, () => rig.zoom(1.25));
+  const lab = document.createElement('label');
+  lab.className = 'vcheck';
+  lab.title = '회전 중심(빨간 점) 숨기기 — 지구본·종이를 더블클릭하면 그 지점이 회전 중심';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox'; cb.checked = hidePivot;
+  cb.addEventListener('change', () => onHidePivot(cb.checked));
+  const sp = document.createElement('span');
+  sp.textContent = '중심점 숨기기';
+  lab.append(cb, sp);
+  box.appendChild(lab);
   const hint = document.createElement('div');
   hint.className = 'vhint';
-  hint.textContent = '드래그 회전 · 휠 확대/축소 · 오른쪽 드래그 이동 · 시점이 흐트러지면 왼쪽 위 맞춤 버튼';
+  hint.textContent = '드래그 회전 · 휠 확대/축소 · 오른쪽 드래그 이동 · 더블클릭 회전 중심 이동 · 시점이 흐트러지면 왼쪽 위 맞춤 버튼';
   viewport.append(box, hint);
   return { fitBtn };
 }
@@ -106,6 +117,12 @@ async function main() {
   const tissot = new Tissot();
   const compare = new CompareOverlay();
   moveGroup.add(paper.group, mapLayer.group, tissot.group, compare.group);
+  const pivot = new PivotMarker();
+  scene.add(pivot.mesh);
+  const PIVOT_KEY = 'proj3d.hidePivot';
+  let hidePivot = false;
+  try { hidePivot = localStorage.getItem(PIVOT_KEY) === '1'; } catch (e) { /* 저장 불가 환경 */ }
+  pivot.mesh.visible = !hidePivot;
   const rays = new Rays();
   frameGroup.add(rays.group);
 
@@ -152,7 +169,23 @@ async function main() {
   sheetTitle.textContent = entry().nameKo;
   const side = mountSidePanel(document.getElementById('side'));
   const tooltip = document.getElementById('tooltip');
-  const { fitBtn } = mountViewTools(viewport, rig);
+  const { fitBtn } = mountViewTools(viewport, rig, {
+    hidePivot,
+    onHidePivot: (v) => {
+      pivot.mesh.visible = !v;
+      try { localStorage.setItem(PIVOT_KEY, v ? '1' : '0'); } catch (e) { /* 저장 불가 환경 */ }
+    },
+  });
+  // 더블클릭·두 번 탭 → 회전 중심 이동. 종이 정점에는 도메인 밖 NaN 이 있어 three 가 자동 계산하는 경계 구가 NaN 이 되므로 큰 구로 고정.
+  const pickSphere = new THREE.Sphere(new THREE.Vector3(), 1e4);
+  installPivotPicking(renderer.domElement, camera, () => {
+    paper.geometry.boundingSphere = pickSphere;
+    return [globe.mesh, paper.mesh];
+  }, (point) => {
+    rig.autoFrame = false;            // 자동 맞춤이 중심을 도로 끌고 가지 않도록
+    controls.target.copy(point);
+    controls.update();
+  });
 
   // ---- 상태 → 씬 ----
   let dirty = true;
@@ -383,12 +416,13 @@ async function main() {
     paper.setOpacity(paperOpacity);
     fitBtn.classList.toggle('on', rig.autoFrame);
     controls.update();
+    pivot.update(camera, controls.target);
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
   document.body.classList.add('ready');
-  window.__app = { scene, camera, renderer, controls, rig, refresh, getState, frame, entry, paperBox };
+  window.__app = { scene, camera, renderer, controls, rig, refresh, getState, frame, entry, paperBox, pivot };
 }
 
 main().catch((err) => {
