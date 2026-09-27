@@ -20,6 +20,7 @@ import { layoutSpacingGraph } from '../js/ui/graphLayout.js';
 import * as S from '../js/state.js';
 import { isDoubleTap } from '../js/util/doubleTap.js';
 import { prepareMapData, buildMapVector, landFrameRings, regionRects } from '../js/export/mapVector.js';
+import { exportColors, drawMapVector, layoutFor, LONG_SIDE } from '../js/export/drawMap.js';
 
 const D = Math.PI / 180;
 const HALF_PI = Math.PI / 2;
@@ -629,6 +630,44 @@ function testMapVector(land) {
   report(SEC, '땅 고리가 모두 도메인 안 (사각·원형)', bad.domain.length === 0, bad.domain.join(', '));
   report(SEC, '구드: 땅 고리가 자기 로브(경도 구간 × 반구) 밖으로 나가지 않음', bad.lobe.length === 0, bad.lobe.join(', '));
   report(SEC, `정적 도법: 땅/바다 넓이 비가 구 위 땅 비율(${landFrac.toFixed(4)})의 1 % 안`, bad.area.length === 0, bad.area.join(', '));
+
+  // 색 규칙표
+  const C = (fill, invert) => exportColors({ fill, invert });
+  const want = [
+    { sea: '#ffffff', land: '#000000', line: '#000000' },
+    { sea: '#000000', land: '#ffffff', line: '#ffffff' },
+    { sea: null, land: null, line: '#000000' },
+    { sea: null, land: null, line: '#ffffff' },
+  ];
+  const got = [C(true, false), C(true, true), C(false, false), C(false, true)];
+  report(SEC, '색 규칙표 (채우기 × 색 반전 4경우)', JSON.stringify(got) === JSON.stringify(want), JSON.stringify(got));
+
+  // 그리기 순서·색 (가짜 캔버스로 호출 기록)
+  const record = () => {
+    const calls = [];
+    const ctx = {
+      fillStyle: '', strokeStyle: '', lineWidth: 1, lineJoin: '', lineCap: '',
+      clearRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {},
+      save() {}, restore() {}, clip() {},
+      fill() { calls.push(['fill', this.fillStyle]); },
+      stroke() { calls.push(['stroke', this.strokeStyle]); },
+    };
+    return { ctx, calls };
+  };
+  const sample = mapVectorFrames().find((c) => c.name === 'equalEarth/normal').fr;
+  const v = buildMapVector(sample, data, { graticule: true });
+  const L = layoutFor(v.bbox, LONG_SIDE);
+  const on = record();
+  drawMapVector(on.ctx, v, { fill: true, invert: false, graticule: true }, L, LONG_SIDE);
+  const fills = on.calls.filter((c) => c[0] === 'fill').map((c) => c[1]);
+  const colorsOn = new Set(on.calls.map((c) => c[1]));
+  report(SEC, '채우기: 바다(흰) → 땅(검) 순서, 쓰인 색은 #000000·#ffffff 뿐', JSON.stringify(fills) === '["#ffffff","#000000"]' && [...colorsOn].every((c) => c === '#000000' || c === '#ffffff'), `fill ${fills.join(' → ')}`);
+  const off = record();
+  drawMapVector(off.ctx, v, { fill: false, invert: true, graticule: true }, L, LONG_SIDE);
+  const offFills = off.calls.filter((c) => c[0] === 'fill').length;
+  const offColors = new Set(off.calls.map((c) => c[1]));
+  report(SEC, '채우기 끔 + 색 반전: 면 없이 흰 선만', offFills === 0 && offColors.size === 1 && offColors.has('#ffffff'), `fill ${offFills}회, 색 ${[...offColors].join(',')}`);
+  report(SEC, `저장 크기: 긴 변 ${LONG_SIDE} px`, Math.max(L.width, L.height) === LONG_SIDE, `${L.width} × ${L.height}`);
 }
 
 /** 합성 땅으로 원형 도메인 잘라내기·종이 공간 세분을 검증(프레임 = 지리, 항등 회전) */
