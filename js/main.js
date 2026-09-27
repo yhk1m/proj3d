@@ -22,6 +22,7 @@ import { mountControls, mountUtilControls } from './ui/controls.js';
 import { mountStepper } from './ui/stepper.js';
 import { mountSidePanel } from './ui/sidePanel.js';
 import { CompareOverlay, AreaRatio } from './ui/compare.js';
+import { createExportModal } from './ui/exportModal.js';
 import { damp } from './util/tween.js';
 
 const D = Math.PI / 180;
@@ -136,13 +137,15 @@ async function main() {
   rig.instant = INSTANT;
 
   // ---- UI ----
+  const exportModal = createExportModal({ landTopo: land, getFrame: frame });
+  const onExport = () => exportModal.open();
   mountPicker(document.getElementById('picker'));
   mountControls(document.getElementById('controls'));
   const { utilSlot } = mountStepper(document.getElementById('stepper'));
-  mountUtilControls(utilSlot);
+  mountUtilControls(utilSlot, { onExport });
   const drawerUtils = document.getElementById('drawerUtils');
   drawerUtils.parentNode.appendChild(drawerUtils);               // 컨트롤 뒤(서랍 맨 아래)로
-  mountUtilControls(drawerUtils);                                 // 모바일 서랍(햄버거)용 — 같은 상태를 구독하므로 서로 동기화됨
+  mountUtilControls(drawerUtils, { onExport });                   // 모바일 서랍(햄버거)용 — 같은 상태를 구독하므로 서로 동기화됨
 
   // ---- 모바일 햄버거 서랍 · 설명 패널 접기/펴기 ----
   const menuBtn = document.getElementById('menuBtn');
@@ -150,7 +153,7 @@ async function main() {
   menuBtn.addEventListener('click', (ev) => { ev.stopPropagation(); setMenu(!document.body.classList.contains('menu-open')); });
   document.addEventListener('pointerdown', (ev) => {
     if (!document.body.classList.contains('menu-open')) return;
-    if (ev.target.closest('#controls') || ev.target.closest('#menuBtn') || ev.target.closest('.picker-menu') || ev.target.closest('.popover')) return;
+    if (ev.target.closest('#controls') || ev.target.closest('#menuBtn') || ev.target.closest('.picker-menu') || ev.target.closest('.popover') || ev.target.closest('.modal-backdrop')) return;
     setMenu(false);
   });
   window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') setMenu(false); });

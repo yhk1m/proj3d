@@ -169,8 +169,8 @@ export function mountControls(container) {
   render(getState());
 }
 
-/** 유틸 버튼(저사양·전체화면·링크 복사) — 하단 재생 줄 오른쪽에 둔다(헤더가 두 줄이 되지 않게). */
-export function mountUtilControls(container) {
+/** 유틸 버튼(저사양·전체화면·링크 복사·PNG 저장) — 하단 재생 줄 오른쪽에 둔다(헤더가 두 줄이 되지 않게). */
+export function mountUtilControls(container, { onExport } = {}) {
   let renderedKey = null;
   const box = el('span', 'utils');
   container.appendChild(box);
@@ -198,6 +198,13 @@ export function mountUtilControls(container) {
       try { await navigator.clipboard.writeText(url); share.textContent = '복사됨'; setTimeout(() => (share.textContent = '링크 복사'), 1200); } catch { prompt('URL', url); }
     });
     box.appendChild(share);
+    if (onExport) {
+      const png = el('button', 'chip', 'PNG 저장');
+      png.type = 'button';
+      png.title = '지금 종이에 그려진 지도를 투명 배경 PNG 로 저장';
+      png.addEventListener('click', onExport);
+      box.appendChild(png);
+    }
   }
   subscribe(render);
   render(getState());
