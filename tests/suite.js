@@ -19,6 +19,7 @@ import { makeGridParam, positionOf } from '../js/geometry/pipeline.js';
 import { layoutSpacingGraph } from '../js/ui/graphLayout.js';
 import * as S from '../js/state.js';
 import { isDoubleTap } from '../js/util/doubleTap.js';
+import { prepareMapData, buildMapVector, landFrameRings, regionRects } from '../js/export/mapVector.js';
 
 const D = Math.PI / 180;
 const HALF_PI = Math.PI / 2;
@@ -567,6 +568,62 @@ function testGraticule() {
 }
 
 // ---------------------------------------------------------------------------
+// 15. PNG 벡터
+// ---------------------------------------------------------------------------
+const MAPVEC_ASPECT_IDS = ['mercator', 'equalEarth', 'goodeHomolosine', 'stereographic', 'azimuthalEquidistant', 'lambertConformalConic'];
+
+/** 도법 × 축 조합의 프레임 { f, domain, rotation } */
+function mapVectorFrames() {
+  const out = [];
+  for (const e of Object.values(PROJECTIONS)) {
+    const root = e.derivation ? PROJECTIONS[DERIVATIONS[e.derivation].root] : e;
+    const params = { ...root.params, ...e.params };
+    const st = root.surface ? root.surface.type : 'cylinder';
+    for (const aspect of ['normal', 'transverse', 'oblique']) {
+      if (aspect !== 'normal' && !MAPVEC_ASPECT_IDS.includes(e.id)) continue;
+      out.push({ name: `${e.id}/${aspect}`, fr: { f: (l, p) => e.forward(l, p, params), domain: domainOf(e, params), rotation: makeRotation(aspectSpec(aspect, st)) } });
+    }
+  }
+  return out;
+}
+
+function testMapVector(land) {
+  const data = prepareMapData(land);
+  const bad = { empty: [], finite: [], jump: [], domain: [], lobe: [] };
+  const cases = mapVectorFrames();
+  for (const { name, fr } of cases) {
+    const v = buildMapVector(fr, data, { graticule: true });
+    if (!v.sea.length || !v.land.length || !v.coast.length || !v.outline.length) { bad.empty.push(name); continue; }
+    const paths = [...v.sea, ...v.land, ...v.coast, ...v.graticule, ...v.outline];
+    if (!paths.every((pts) => pts.every(([x, y]) => Number.isFinite(x) && Number.isFinite(y)))) bad.finite.push(name);
+    const lim = 0.5 * (v.bbox.maxX - v.bbox.minX);
+    const jumps = (pts, closed) => {
+      const n = pts.length;
+      for (let i = 1; i < n + (closed ? 1 : 0); i++) {
+        const a = pts[i - 1], b = pts[i % n];
+        if (Math.hypot(b[0] - a[0], b[1] - a[1]) > lim) return true;
+      }
+      return false;
+    };
+    if (v.sea.some((r) => jumps(r, true)) || v.land.some((r) => jumps(r, true)) ||
+      [...v.coast, ...v.graticule, ...v.outline].some((l) => jumps(l, false))) bad.jump.push(name);
+    const rings = landFrameRings(fr, data);
+    if (!rings.every(({ ring }) => ring.every(([l, p]) => inDomain(fr.domain, l, p)))) bad.domain.push(name);
+    if (fr.domain.cuts) {
+      const rects = regionRects(fr.domain);
+      const inRect = (r, l, p) => l >= r.l0 - 1e-9 && l <= r.l1 + 1e-9 && p >= r.p0 - 1e-9 && p <= r.p1 + 1e-9;
+      if (!rings.every(({ region, ring }) => ring.every(([l, p]) => inRect(rects[region], l, p)))) bad.lobe.push(name);
+    }
+  }
+  const S = '15. PNG 벡터';
+  report(S, `바다·땅·해안선·테두리 경로가 비어 있지 않음 (${cases.length}개 도법·축)`, bad.empty.length === 0, bad.empty.join(', '));
+  report(S, '모든 경로 좌표가 유한', bad.finite.length === 0, bad.finite.join(', '));
+  report(S, '지도 폭의 절반을 넘는 선분 없음 (날짜변경선·절개선을 건너뛰지 않음)', bad.jump.length === 0, bad.jump.join(', '));
+  report(S, '땅 고리가 모두 도메인 안 (사각·원형)', bad.domain.length === 0, bad.domain.join(', '));
+  report(S, '구드: 땅 고리가 자기 로브(경도 구간 × 반구) 밖으로 나가지 않음', bad.lobe.length === 0, bad.lobe.join(', '));
+}
+
+// ---------------------------------------------------------------------------
 // 16. 두 번 탭
 // ---------------------------------------------------------------------------
 function testDoubleTap() {
@@ -631,6 +688,7 @@ export async function runAll({ loadJSON } = {}) {
     try { land = await loadJSON('data/land-110m.json'); countries = await loadJSON('data/countries-110m.json'); } catch (e) { /* 아래에서 보고 */ }
   }
   testClipAndArea(land, countries);
+  testMapVector(land);
   testGoode(land);
   testGraphLabels();
   testPlayback();
