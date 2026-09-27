@@ -46,6 +46,7 @@ export function mountStepper(container) {
 
   window.addEventListener('keydown', (ev) => {
     if (ev.target && /input|select|textarea/i.test(ev.target.tagName) && ev.target.type !== 'range') return;
+    if (document.querySelector('.modal-backdrop.open')) return; // PNG 모달이 열려 있으면 재생 단축키 무시
     if (ev.key === 'ArrowRight') { ev.preventDefault(); next(true); }
     else if (ev.key === 'ArrowLeft') { ev.preventDefault(); prev(); }
     else if (ev.key === ' ') { ev.preventDefault(); togglePlay(); }

@@ -106,7 +106,7 @@ export function createExportModal({ landTopo, getFrame }) {
       save.disabled = !ok;
       backdrop.classList.add('open');
       if (ok) drawPreview();
-      else { vec = null; note.textContent = '이 단계에서는 그릴 지도가 없음'; }
+      else { vec = null; canvas.width = 0; canvas.height = 0; note.textContent = '이 단계에서는 그릴 지도가 없음'; }
       save.focus();
     },
   };
