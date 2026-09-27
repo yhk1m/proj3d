@@ -14,7 +14,7 @@ import { inDomain, paperPosition } from '../js/geometry/pipeline.js';
 import { lightPosition } from '../js/projections/perspective.js';
 import { coastlines, graticuleLines, splitLines, splitAtCuts, hasSeamCrossing, countryRings, projectedArea, AFRICA_FILTER, GREENLAND_FILTER } from '../js/geometry/clip.js';
 import { GOODE_CUTS, goodeLobeIndex, goodeHomolosine, homolosine } from '../js/projections/adjusted.js';
-import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../js/geometry/mesh.js';
+import { buildGridTopology, scatterTriangles, fixLobeSeams, crossesCut } from '../js/geometry/mesh.js';
 import { makeGridParam, positionOf } from '../js/geometry/pipeline.js';
 import { layoutSpacingGraph } from '../js/ui/graphLayout.js';
 import * as S from '../js/state.js';
@@ -515,6 +515,18 @@ function testGoode(land) {
     }
     // 로브를 걸치면 이웃 중앙경선 차이(≥ 40° = 0.7) 만큼 길어진다. 극 근처 몰바이데 삼각형은 정상적으로 0.12 정도.
     report('11. 구드 호몰로사인', `격자 메시 t=${t}: 로브 경계를 걸치는 삼각형 없음 (보정 ${fixed}개, 최장 변 ${longest.toFixed(3)})`, fixed > 0 && longest < 0.3, '');
+  }
+  // 종이 테두리(paper._updateEdge 와 같은 줄): 맨 윗줄·아랫줄에서 절개선을 사이에 둔 이웃 점은 잇지 않음.
+  // 이으면 두 점이 서로 다른 로브의 극점으로 가서 틈을 가로지르는 가로선이 된다. (위의 t = 1 격자 그대로 사용)
+  {
+    const nu = 180, nv = 90;
+    let longest = 0, skipped = 0;
+    for (const j of [0, nv]) for (let i = 0; i < nu; i++) {
+      const a = j * (nu + 1) + i, b = a + 1;
+      if (crossesCut(gridLatLon[2 * a], gridLatLon[2 * b], gridLatLon[2 * a + 1], GOODE_CUTS)) { skipped++; continue; }
+      longest = Math.max(longest, Math.hypot(gridPos[3 * a] - gridPos[3 * b], gridPos[3 * a + 1] - gridPos[3 * b + 1], gridPos[3 * a + 2] - gridPos[3 * b + 2]));
+    }
+    report('11. 구드 호몰로사인', `종이 테두리 윗줄·아랫줄: 절개선을 걸치는 선분 4개는 잇지 않음, 남은 최장 선분 < 0.1`, skipped === 4 && longest < 0.1, `건너뜀 ${skipped}, 최장 ${longest.toFixed(3)}`);
   }
 }
 

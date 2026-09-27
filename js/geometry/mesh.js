@@ -82,6 +82,16 @@ export function fixLobeSeams(gridLatLon, tris, dst, cuts, evalPos, eps = 1e-6) {
   return fixed;
 }
 
+/**
+ * 같은 위도 φ 의 두 점(경도 l0, l1)이 그 반구의 절개 자오선을 사이에 두는지. 절개선 위의 점은 동쪽 로브(goodeLobeIndex 와 같음).
+ * 종이 테두리처럼 이웃 격자점을 잇는 선에서, 사이에 두면 서로 다른 로브로 가므로 잇지 않는다.
+ */
+export function crossesCut(l0, l1, phi, cuts) {
+  if (!cuts) return false;
+  for (const c of phi >= 0 ? cuts.north : cuts.south) if ((l0 < c) !== (l1 < c)) return true;
+  return false;
+}
+
 /** 절개 자오선을 따라 그리는 가장자리 선(양쪽 로브 각각). 반환: [λ, φ, λ, φ, …] 폴리라인 배열(프레임 좌표, ε 만큼 안쪽) */
 export function cutEdgeLines(cuts, stepDeg = 2, eps = 1e-6) {
   const D = Math.PI / 180;

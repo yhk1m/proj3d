@@ -3,7 +3,7 @@
 // 정점 위치는 geometry/pipeline.js 의 합성으로만 계산한다. 격자 유틸은 geometry/mesh.js.
 import * as THREE from 'three';
 import { positionOf, makeGridParam } from '../geometry/pipeline.js';
-import { buildGridTopology, scatterTriangles, fixLobeSeams, cutEdgeLines } from '../geometry/mesh.js';
+import { buildGridTopology, scatterTriangles, fixLobeSeams, cutEdgeLines, crossesCut } from '../geometry/mesh.js';
 import { getState } from '../state.js';
 import { contactGLSL, contactUniforms, updateContact } from './contact.js';
 
@@ -171,7 +171,7 @@ export class Paper {
 
   _updateEdge(kind, cuts, paperCtx) {
     const { nu, nv } = this;
-    const gp = this.gridPos, ep = this.edgePos;
+    const gp = this.gridPos, gl = this.gridLatLon, ep = this.edgePos;
     const ring = [];
     if (kind === 'cap') {
       // 원판: v = 0 은 중심점, u = 0/1 은 같은 반지름 선이므로 바깥 테두리(v = 1)만 그린다
@@ -186,7 +186,9 @@ export class Paper {
     let o = 0;
     for (let k = 0; k < ring.length; k++) {
       const a = ring[k], b = ring[(k + 1) % ring.length];
-      const bad = Number.isNaN(gp[a * 3]) || Number.isNaN(gp[b * 3]);
+      // 단열 도법: 절개선을 사이에 둔 이웃 점은 서로 다른 로브(극에서는 서로 다른 극점)로 가므로 잇지 않음 — 로브 경계는 아래 절개선이 그림
+      const cut = cuts && crossesCut(gl[2 * a], gl[2 * b], gl[2 * a + 1], cuts);
+      const bad = cut || Number.isNaN(gp[a * 3]) || Number.isNaN(gp[b * 3]);
       const ia = bad ? (Number.isNaN(gp[a * 3]) ? b : a) : a;
       const ib = bad ? ia : b;
       ep[o++] = gp[ia * 3]; ep[o++] = gp[ia * 3 + 1]; ep[o++] = gp[ia * 3 + 2];
