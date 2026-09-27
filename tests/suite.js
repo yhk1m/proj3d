@@ -18,6 +18,7 @@ import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../js/geometr
 import { makeGridParam, positionOf } from '../js/geometry/pipeline.js';
 import { layoutSpacingGraph } from '../js/ui/graphLayout.js';
 import * as S from '../js/state.js';
+import { isDoubleTap } from '../js/util/doubleTap.js';
 
 const D = Math.PI / 180;
 const HALF_PI = Math.PI / 2;
@@ -566,6 +567,21 @@ function testGraticule() {
 }
 
 // ---------------------------------------------------------------------------
+// 16. 두 번 탭
+// ---------------------------------------------------------------------------
+function testDoubleTap() {
+  const a = { t: 1000, x: 100, y: 100 };
+  const cases = [
+    [isDoubleTap(a, { t: 1250, x: 110, y: 95 }), true, '250 ms · 11 px → 두 번 탭'],
+    [isDoubleTap(a, { t: 1400, x: 100, y: 100 }), false, '400 ms → 아님'],
+    [isDoubleTap(a, { t: 1100, x: 150, y: 100 }), false, '50 px → 아님'],
+    [isDoubleTap(null, a), false, '앞 탭 없음 → 아님'],
+  ];
+  const bad = cases.filter(([got, want]) => got !== want).map(([, , name]) => name);
+  report('16. 두 번 탭', '320 ms · 32 px 안의 두 탭만 두 번 탭 (4경우)', bad.length === 0, bad.join(', '));
+}
+
+// ---------------------------------------------------------------------------
 // 13. 리모컨 재생 상태: 일시정지·이전·스크럽은 진행을 그 자리에서 멈춰야 한다 — 자동 재생의 "한 단계 끝 → 1초 뒤 다음 단계" 대기 중에도.
 function testPlayback() {
   const sec = '13. 리모컨 재생';
@@ -619,5 +635,6 @@ export async function runAll({ loadJSON } = {}) {
   testGraphLabels();
   testPlayback();
   testGraticule();
+  testDoubleTap();
   return results.slice();
 }
