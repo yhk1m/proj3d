@@ -589,8 +589,11 @@ function mapVectorFrames() {
 
 function testMapVector(land) {
   const data = prepareMapData(land);
-  const bad = { empty: [], finite: [], jump: [], domain: [], lobe: [] };
+  const bad = { empty: [], finite: [], jump: [], domain: [], lobe: [], area: [] };
   const cases = mapVectorFrames();
+  // 정적 도법의 땅/바다 넓이 비 = 구 위 땅 비율(d3 구면 넓이). 바다·땅 고리가 뒤집히면(원 전체가 땅) 크게 어긋남
+  const shoelace = (r) => { let s = 0; for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };
+  const landFrac = d3.geoArea({ type: 'MultiPolygon', coordinates: data.land.map((poly) => poly.map((ring) => { const r = ring.map(([l, p]) => [l / D, p / D]); return [...r, r[0]]; })) }) / (4 * Math.PI);
   for (const { name, fr } of cases) {
     const v = buildMapVector(fr, data, { graticule: true });
     if (!v.sea.length || !v.land.length || !v.coast.length || !v.outline.length) { bad.empty.push(name); continue; }
@@ -614,13 +617,74 @@ function testMapVector(land) {
       const inRect = (r, l, p) => l >= r.l0 - 1e-9 && l <= r.l1 + 1e-9 && p >= r.p0 - 1e-9 && p <= r.p1 + 1e-9;
       if (!rings.every(({ region, ring }) => ring.every(([l, p]) => inRect(rects[region], l, p)))) bad.lobe.push(name);
     }
+    if (PROJECTIONS[name.split('/')[0]].property === 'equalArea') {
+      const ratio = v.land.reduce((s, r) => s + Math.abs(shoelace(r)), 0) / v.sea.reduce((s, r) => s + Math.abs(shoelace(r)), 0);
+      if (!(Math.abs(ratio / landFrac - 1) < 0.01)) bad.area.push(`${name} ${ratio.toFixed(4)}`);
+    }
   }
-  const S = '15. PNG 벡터';
-  report(S, `바다·땅·해안선·테두리 경로가 비어 있지 않음 (${cases.length}개 도법·축)`, bad.empty.length === 0, bad.empty.join(', '));
-  report(S, '모든 경로 좌표가 유한', bad.finite.length === 0, bad.finite.join(', '));
-  report(S, '지도 폭의 절반을 넘는 선분 없음 (날짜변경선·절개선을 건너뛰지 않음)', bad.jump.length === 0, bad.jump.join(', '));
-  report(S, '땅 고리가 모두 도메인 안 (사각·원형)', bad.domain.length === 0, bad.domain.join(', '));
-  report(S, '구드: 땅 고리가 자기 로브(경도 구간 × 반구) 밖으로 나가지 않음', bad.lobe.length === 0, bad.lobe.join(', '));
+  const SEC = '15. PNG 벡터';
+  report(SEC, `바다·땅·해안선·테두리 경로가 비어 있지 않음 (${cases.length}개 도법·축)`, bad.empty.length === 0, bad.empty.join(', '));
+  report(SEC, '모든 경로 좌표가 유한', bad.finite.length === 0, bad.finite.join(', '));
+  report(SEC, '지도 폭의 절반을 넘는 선분 없음 (날짜변경선·절개선을 건너뛰지 않음)', bad.jump.length === 0, bad.jump.join(', '));
+  report(SEC, '땅 고리가 모두 도메인 안 (사각·원형)', bad.domain.length === 0, bad.domain.join(', '));
+  report(SEC, '구드: 땅 고리가 자기 로브(경도 구간 × 반구) 밖으로 나가지 않음', bad.lobe.length === 0, bad.lobe.join(', '));
+  report(SEC, `정적 도법: 땅/바다 넓이 비가 구 위 땅 비율(${landFrac.toFixed(4)})의 1 % 안`, bad.area.length === 0, bad.area.join(', '));
+}
+
+/** 합성 땅으로 원형 도메인 잘라내기·종이 공간 세분을 검증(프레임 = 지리, 항등 회전) */
+function testMapVectorSynthetic() {
+  const SEC = '15. PNG 벡터';
+  const ID = makeRotation({ center: [0, 0], azimuth: 0 });
+  const shoelace = (r) => { let s = 0; for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };
+  const noLines = { coast: [], graticule: [] };
+
+  // (a) 대척점 옆 작은 섬(λ ∈ [179°, 180°], φ ∈ [−2°, 2°]) — 정거방위(도메인 179°)의 넓이. 1° 격자로 그리면 줄이 대척점 원을 가로질러 크게 부풂
+  {
+    const e = PROJECTIONS.azimuthalEquidistant;
+    const fr = { f: (l, p) => e.forward(l, p, e.params), domain: domainOf(e, e.params), rotation: ID };
+    const island = [[179 * D, -2 * D], [179 * D, 2 * D], [180 * D, 2 * D], [180 * D, -2 * D]];   // d3 바깥 고리 = (λ, φ) 평면 시계 방향
+    const v = buildMapVector(fr, { land: [[island]], ...noLines }, { graticule: false });
+    const got = v.land.reduce((s, r) => s + Math.abs(shoelace(r)), 0);
+    // 참값: 정거방위는 r = c 이므로 극좌표 (c, az) 적분 ∫∫ c dc daz, 섬 ∩ 도메인(c ≤ 179°)
+    const cMax = fr.domain.maxAngularDist, c0 = 175 * D, nc = 400, na = 7200;
+    const dc = (cMax - c0) / nc, da = (2 * Math.PI) / na;
+    let truth = 0;
+    for (let i = 0; i < nc; i++) {
+      const c = c0 + (i + 0.5) * dc;
+      for (let k = 0; k < na; k++) {
+        const az = -Math.PI + (k + 0.5) * da;
+        const x = Math.sin(c) * Math.sin(az), y = Math.sin(c) * Math.cos(az), z = Math.cos(c);
+        const l = Math.atan2(x, z), p = Math.asin(y);
+        if (l >= 179 * D && Math.abs(p) <= 2 * D) truth += c * dc * da;
+      }
+    }
+    report(SEC, '정거방위 대척점 옆 섬: 그린 넓이가 참값의 5 % 안 (종이 공간 세분)', truth > 0 && Math.abs(got - truth) / truth < 0.05, `그림 ${fmt(got)} · 참값 ${fmt(truth)}`);
+  }
+
+  // (b) 원형 도메인(심사 60°)을 긴 쪽으로 감싸는 땅 — C자(중심까지 파고든 좁은 쐐기) · 90° 너비 만
+  const e = PROJECTIONS.gnomonic;
+  const fr = { f: (l, p) => e.forward(l, p, e.params), domain: domainOf(e, e.params), rotation: ID };
+  const polar = (r, az) => [r * Math.sin(az * D), r * Math.cos(az * D)];   // (λ, φ) 평면 극좌표(도), az 는 북에서 시계 방향
+  const radial = (az, r0, r1) => { const out = []; const n = Math.abs(r1 - r0); for (let k = 0; k <= n; k++) out.push(polar(r0 + (r1 - r0) * k / n, az)); return out; };
+  const arc = (r, az0, az1) => { const out = []; const n = Math.ceil(Math.abs(az1 - az0) / 2); for (let k = 0; k <= n; k++) out.push(polar(r, az0 + (az1 - az0) * k / n)); return out; };
+  const shapes = {
+    'C자(좁은 쐐기)': [...radial(10, 0, 80), ...arc(80, 10, 350).slice(1), ...radial(350, 80, 1).slice(1)],
+    '90° 만': [...arc(80, 45, 315), ...radial(315, 80, 40).slice(1), ...arc(40, 315, 405).slice(1), ...radial(45, 40, 80).slice(1, -1)],
+  };
+  for (const [label, deg] of Object.entries(shapes)) {
+    const ring = deg.map(([l, p]) => [l * D, p * D]);
+    const gj = { type: 'Polygon', coordinates: [[...deg, deg[0]]] };
+    const small = d3.geoArea(gj) < 2 * Math.PI;   // d3 가 여집합으로 읽지 않았는지
+    const rings = landFrameRings(fr, { land: [[ring]], ...noLines }).map((x) => x.ring);
+    const inRings = (pt) => { let n = 0; for (const r of rings) { let ins = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) ins = !ins; } if (ins) n++; } return n % 2 === 1; };
+    let agree = 0, total = 0;
+    for (let l = -59.5; l < 60; l += 1) for (let p = -59.5; p < 60; p += 1) {
+      if (!inDomain(fr.domain, l * D, p * D)) continue;
+      total++;
+      if (d3.geoContains(gj, [l, p]) === inRings([l * D, p * D])) agree++;
+    }
+    report(SEC, `심사 60° 를 긴 쪽으로 감싸는 땅(${label}): 잘라낸 고리가 원래 땅과 표본 99 % 이상 일치`, small && agree / total >= 0.99, `${agree}/${total} (${fmt(100 * agree / total)} %)${small ? '' : ' · d3 가 여집합으로 읽음'}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -689,6 +753,7 @@ export async function runAll({ loadJSON } = {}) {
   }
   testClipAndArea(land, countries);
   testMapVector(land);
+  testMapVectorSynthetic();
   testGoode(land);
   testGraphLabels();
   testPlayback();

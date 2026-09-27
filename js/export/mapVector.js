@@ -103,15 +103,16 @@ function capPoint(c, az) {
 }
 const capAz = (p) => Math.atan2(Math.cos(p[1]) * Math.sin(p[0]), Math.sin(p[1]));
 
-/** 나간 점 a → 들어온 점 b 사이 원호. 두 방향 중 중점이 (λ′, φ′) 평면에서 a·b 중점에 가까운 쪽 */
-function capArc(c, a, b) {
+/** 원 위를 방향 dir(+1 = capAz 증가 = (λ′, φ′) 평면 시계 방향)으로 az0 에서 az1 까지 가는 각(0 이상 2π 미만) */
+function capTravel(az0, az1, dir) {
+  const d = dir * (az1 - az0);
+  return ((d % (2 * PI)) + 2 * PI) % (2 * PI);
+}
+
+/** 나간 점 a → 들어온 점 b 사이 원호 점(양 끝 제외). 방향 dir 로 capTravel 만큼 */
+function capArc(c, a, b, dir) {
   const az0 = capAz(a);
-  let d = capAz(b) - az0;
-  d = (((d + PI) % (2 * PI)) + 2 * PI) % (2 * PI) - PI;
-  const alt = d > 0 ? d - 2 * PI : d + 2 * PI;
-  const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-  const dist = (dd) => { const q = capPoint(c, az0 + dd / 2); return Math.hypot(q[0] - mid[0], q[1] - mid[1]); };
-  const dd = dist(d) <= dist(alt) ? d : alt;
+  const dd = dir * capTravel(az0, capAz(b), dir);
   const n = Math.max(1, Math.ceil(Math.abs(dd) / ARC));
   const pts = [];
   for (let k = 1; k < n; k++) pts.push(capPoint(c, az0 + (dd * k) / n));
@@ -125,8 +126,24 @@ function capCircle(c) {
   return pts;
 }
 
-/** 원형 도메인으로 자름. 고리가 원 전체를 감싸면 원 고리 */
-function clipToCap(ring, c) {
+/** (λ′, φ′) 평면 신발끈 넓이(반시계 +) */
+function signedArea(ring) {
+  let s = 0;
+  for (let i = 0, n = ring.length; i < n; i++) { const a = ring[i], b = ring[(i + 1) % n]; s += a[0] * b[1] - b[0] * a[1]; }
+  return s / 2;
+}
+
+/**
+ * 원형 도메인으로 자름 → 고리 배열. 고리가 원 전체를 감싸면 원 고리 하나.
+ * 바이러–애서턴 방식: 원 안에 든 구간(들어온 점 … 나간 점)들을 만든 뒤, 나간 점에서 고리 방향으로 원을 따라가
+ * 처음 만나는 들어온 점의 구간으로 잇는다. 고리 방향: capAz 증가는 (λ′, φ′) 평면(φ′ 위)에서 도메인 안쪽을 오른쪽에 둔
+ * 시계 방향 → 시계 방향 고리(신발끈 음수, d3 바깥 고리)는 az 증가, 반시계는 감소. (가까운 쪽 원호나 고리 순서대로의 짝짓기는
+ * 원을 긴 쪽으로 감싸는 땅 · 해안이 경계를 여러 번 넘나드는 땅에서 고리를 뒤집는다.)
+ */
+function clipToCap(ring, cIn) {
+  // c = 90° 는 극(φ′ = ±90° 변 전체)이 경계 위에 놓여 안/밖이 반올림에 좌우됨 → 아주 조금 안쪽으로
+  const c = Math.abs(cIn - PI / 2) < 1e-12 ? cIn - 1e-9 : cIn;
+  const n = ring.length;
   const cr = Math.cos(c);
   const inside = (p) => Math.cos(p[1]) * Math.cos(p[0]) >= cr;
   const cross = (a, b) => {
@@ -137,13 +154,51 @@ function clipToCap(ring, c) {
     q.onCap = true;
     return q;
   };
-  const cut = clipHalf(ring, inside, cross);
-  if (!cut.length) return pointInRing([0, 0], ring) ? capCircle(c) : [];
+  const ins = ring.map(inside);
+  if (ins.every(Boolean)) return [ring];
+  const start = ins.findIndex((v, i) => v && !ins[(i + n - 1) % n]);
+  if (start < 0) return pointInRing([0, 0], ring) ? [capCircle(c)] : [];
+  // 원 안 구간: 들어온 점 … 나간 점
+  const segs = [];
+  let seg = null;
+  for (let k = 0; k < n; k++) {
+    const i = (start + k) % n, prev = (i + n - 1) % n, next = (i + 1) % n;
+    if (!ins[i]) continue;
+    if (!ins[prev]) seg = [cross(ring[prev], ring[i])];
+    seg.push(ring[i]);
+    if (!ins[next]) { seg.push(cross(ring[i], ring[next])); segs.push({ pts: seg, azIn: capAz(seg[0]), azOut: capAz(seg[seg.length - 1]) }); seg = null; }
+  }
+  const dir = signedArea(ring) < 0 ? 1 : -1;
+  // c > 90° 이면 원이 대척점(날짜변경선 λ′ = ±180° 위)을 감싸, 평면에서는 λ′ > 0 쪽(az ∈ (0, π])과 λ′ < 0 쪽(az ∈ [−π, 0))
+  // 두 호로 나뉜다. 호는 같은 쪽 안에서만, az 0·±π 를 넘지 않고 이어야 함((π, φ′)·(−π, φ′) 는 구 위 같은 점이지만 평면에선 딴 점)
+  const split = c > PI / 2;
+  const travel = (a, azA, b, azB) => {
+    if (!split) return capTravel(azA, azB, dir);
+    if ((a[0] > 0) !== (b[0] > 0)) return Infinity;
+    const t = dir * (azB - azA);
+    return t < -1e-12 ? Infinity : Math.max(0, t);
+  };
+  const used = new Array(segs.length).fill(false);
   const out = [];
-  for (let i = 0; i < cut.length; i++) {
-    const a = cut[i], b = cut[(i + 1) % cut.length];
-    out.push(a);
-    if (a.exit && b.entry) out.push(...capArc(c, a, b));
+  for (let s0 = 0; s0 < segs.length; s0++) {
+    if (used[s0]) continue;
+    const pts = [];
+    let cur = s0;
+    for (let guard = 0; guard <= segs.length; guard++) {
+      used[cur] = true;
+      pts.push(...segs[cur].pts);
+      let best = -1, bestT = Infinity;
+      for (let t = 0; t < segs.length; t++) {
+        if (used[t] && t !== s0) continue;
+        const tr = travel(segs[cur].pts[segs[cur].pts.length - 1], segs[cur].azOut, segs[t].pts[0], segs[t].azIn);
+        if (tr < bestT) { bestT = tr; best = t; }
+      }
+      if (best < 0) break;   // 이을 곳 없음(자료가 어긋난 경우) — 그대로 닫음
+      pts.push(...capArc(c, segs[cur].pts[segs[cur].pts.length - 1], segs[best].pts[0], dir));
+      if (best === s0) break;
+      cur = best;
+    }
+    out.push(pts);
   }
   return out;
 }
@@ -200,9 +255,9 @@ export function landFrameRings(fr, data) {
     for (const ring of clipAntimeridianPolygon(poly, fr.rotation)) {
       const dense = densify(ring, true);
       regions.forEach((r, ri) => {
-        let c = clipToRect(dense, r);
-        if (c.length && cap != null) c = clipToCap(c, cap);
-        if (c.length >= 3) out.push({ region: ri, ring: densify(c, true) });
+        const c = clipToRect(dense, r);
+        if (c.length < 3) return;
+        for (const cc of cap != null ? clipToCap(c, cap) : [c]) if (cc.length >= 3) out.push({ region: ri, ring: densify(cc, true) });
       });
     }
   }
@@ -214,9 +269,8 @@ export function seaFrameRings(domain) {
   const cap = capOf(domain);
   const out = [];
   for (const r of regionRects(domain)) {
-    let ring = densify([[r.l0, r.p0], [r.l1, r.p0], [r.l1, r.p1], [r.l0, r.p1]], true);
-    if (cap != null) ring = clipToCap(ring, cap);
-    if (ring.length >= 3) out.push(densify(ring, true));
+    const ring = densify([[r.l0, r.p0], [r.l1, r.p0], [r.l1, r.p1], [r.l0, r.p1]], true);
+    for (const rr of cap != null ? clipToCap(ring, cap) : [ring]) if (rr.length >= 3) out.push(densify(rr, true));
   }
   return out;
 }
@@ -255,23 +309,51 @@ export function frameLines(lines, fr) {
 
 // ---- 투영 ----------------------------------------------------------------
 
-function projectRing(ring, f) {
+const MAX_DEPTH = 14;   // 종이 공간 세분 최대 깊이(1° → 약 0.0002°)
+const TOL = 1.5e-4;    // 세분 허용 오차 = 지도 폭 × TOL (3000 px 에서 0.5 px)
+
+function proj(f, l, p) {
+  const q = f(l, p);
+  return Number.isFinite(q[0]) && Number.isFinite(q[1]) ? [q[0], q[1]] : null;
+}
+
+/**
+ * 프레임 선분 a–b(투영 pa–pb) 사이에 종이 공간 세분 점을 out 에 넣음(양 끝 제외).
+ * (λ′, φ′) 중점의 투영이 종이 현의 중점에서 tol 넘게 벗어나면 둘로 나눠 되풀이 — 대척점 근처처럼 1° 가 종이에서 크게 휘는 곳.
+ * 원형 경계 위 두 점 사이(원호 점, (λ′, φ′) 중점은 원 위가 아님)는 나누지 않음.
+ */
+function subdivide(f, a, b, pa, pb, tol, depth, out) {
+  if (tol <= 0 || depth >= MAX_DEPTH || (a.onCap && b.onCap)) return;
+  const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const q = proj(f, m[0], m[1]);
+  if (!q || Math.hypot(q[0] - (pa[0] + pb[0]) / 2, q[1] - (pa[1] + pb[1]) / 2) <= tol) return;
+  subdivide(f, a, m, pa, q, tol, depth + 1, out);
+  out.push(q);
+  subdivide(f, m, b, q, pb, tol, depth + 1, out);
+}
+
+/** 닫힌 고리 투영(비유한 점은 뺌). 이웃한 두 유한 점 사이는 종이 공간 세분 */
+function projectRing(ring, f, tol = 0) {
+  const n = ring.length, P = ring.map(([l, p]) => proj(f, l, p));
   const out = [];
-  for (const [l, p] of ring) {
-    const q = f(l, p);
-    if (Number.isFinite(q[0]) && Number.isFinite(q[1])) out.push([q[0], q[1]]);
+  for (let i = 0; i < n; i++) {
+    if (!P[i]) continue;
+    out.push(P[i]);
+    const j = (i + 1) % n;
+    if (P[j]) subdivide(f, ring[i], ring[j], P[i], P[j], tol, 0, out);
   }
   return out;
 }
 
-/** 선은 비유한 점에서 끊어 여러 조각으로 */
-function projectLine(line, f) {
+/** 선은 비유한 점에서 끊어 여러 조각으로. 조각 안은 종이 공간 세분 */
+function projectLine(line, f, tol = 0) {
   const out = [];
   let cur = [];
-  for (const [l, p] of line) {
-    const q = f(l, p);
-    if (Number.isFinite(q[0]) && Number.isFinite(q[1])) cur.push([q[0], q[1]]);
-    else { if (cur.length >= 2) out.push(cur); cur = []; }
+  for (let i = 0; i < line.length; i++) {
+    const q = proj(f, line[i][0], line[i][1]);
+    if (!q) { if (cur.length >= 2) out.push(cur); cur = []; continue; }
+    if (cur.length && i > 0) subdivide(f, line[i - 1], line[i], cur[cur.length - 1], q, tol, 0, cur);
+    cur.push(q);
   }
   if (cur.length >= 2) out.push(cur);
   return out;
@@ -292,10 +374,15 @@ function bboxOf(paths) {
  */
 export function buildMapVector(fr, data, { graticule = true } = {}) {
   const f = fr.f;
-  const sea = seaFrameRings(fr.domain).map((r) => projectRing(r, f)).filter((r) => r.length >= 3);
-  const land = landFrameRings(fr, data).map(({ ring }) => projectRing(ring, f)).filter((r) => r.length >= 3);
-  const coast = frameLines(data.coast, fr).flatMap((ln) => projectLine(ln, f));
-  const grat = graticule ? frameLines(data.graticule, fr).flatMap((ln) => projectLine(ln, f)) : [];
-  const outline = outlineFrameLines(fr.domain).flatMap((ln) => projectLine(ln, f));
+  const seaFrame = seaFrameRings(fr.domain);
+  // 세분 허용 오차: 바다 고리를 거칠게 투영한 지도 폭 기준
+  const coarse = bboxOf(seaFrame.map((r) => projectRing(r, f)));
+  const span = Math.max(coarse.maxX - coarse.minX, coarse.maxY - coarse.minY);
+  const tol = Number.isFinite(span) && span > 0 ? TOL * span : 0;
+  const sea = seaFrame.map((r) => projectRing(r, f, tol)).filter((r) => r.length >= 3);
+  const land = landFrameRings(fr, data).map(({ ring }) => projectRing(ring, f, tol)).filter((r) => r.length >= 3);
+  const coast = frameLines(data.coast, fr).flatMap((ln) => projectLine(ln, f, tol));
+  const grat = graticule ? frameLines(data.graticule, fr).flatMap((ln) => projectLine(ln, f, tol)) : [];
+  const outline = outlineFrameLines(fr.domain).flatMap((ln) => projectLine(ln, f, tol));
   return { sea, land, coast, graticule: grat, outline, bbox: bboxOf(sea.length ? sea : outline) };
 }
