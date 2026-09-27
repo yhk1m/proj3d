@@ -137,7 +137,7 @@ async function main() {
   rig.instant = INSTANT;
 
   // ---- UI ----
-  const exportModal = createExportModal({ landTopo: land, getFrame: frame });
+  const exportModal = createExportModal({ landTopo: land, getFrame: frame, getTissot: () => getState().tissot });
   const onExport = () => exportModal.open();
   mountPicker(document.getElementById('picker'));
   mountControls(document.getElementById('controls'));

@@ -1,13 +1,13 @@
 // © 2026 김용현
 // export/drawMap.js — mapVector 결과를 캔버스 2D 에 그린다. 색은 두 가지(#000000 · #ffffff)만, 지도 밖은 투명.
-// 채우기: 바다 → 경위선(땅 아래라 바다 위에만 보임) → 땅 → 해안선 → 테두리. 채우기 끔: 경위선 → 해안선 → 테두리.
+// 채우기: 바다 → 경위선(땅 아래라 바다 위에만 보임) → 땅 → 해안선 → 티소 지표 → 테두리. 채우기 끔: 경위선 → 해안선 → 티소 지표 → 테두리.
 export const LONG_SIDE = 3000;
 const BLACK = '#000000', WHITE = '#ffffff';
 
-/** 색 규칙. 채우기 끔이면 면은 투명(null). 선은 늘 땅 색 */
+/** 색 규칙. 채우기 끔이면 면은 투명(null). 선은 늘 땅 색. halo = 땅 위에서도 선이 보이게 까는 반대색 테두리(채우기일 때만) */
 export function exportColors({ fill, invert }) {
   const dark = invert ? WHITE : BLACK, light = invert ? BLACK : WHITE;
-  return { sea: fill ? light : null, land: fill ? dark : null, line: dark };
+  return { sea: fill ? light : null, land: fill ? dark : null, line: dark, halo: fill ? light : null };
 }
 
 /** 캔버스 크기(긴 변 = longSide, 사방 여백 1 %)와 종이 좌표 → 픽셀 변환(y 뒤집기) */
@@ -30,7 +30,7 @@ function trace(ctx, pts, L, close) {
   if (close) ctx.closePath();
 }
 
-/** opts = { fill, invert, graticule }. 선 굵기는 긴 변 3000 px 기준(테두리 3, 해안선 2, 경위선 1.5)으로 비례 */
+/** opts = { fill, invert, graticule, tissot }. 선 굵기는 긴 변 3000 px 기준(테두리 3, 해안선 2, 경위선 1.5, 티소 2 + 테두리 5)으로 비례 */
 export function drawMapVector(ctx, vec, opts, L, longSide) {
   const c = exportColors(opts);
   const s = longSide / LONG_SIDE;
@@ -52,10 +52,10 @@ export function drawMapVector(ctx, vec, opts, L, longSide) {
     ctx.stroke();
     ctx.restore();
   };
-  const strokeLines = (lines, px) => {
+  const strokeLines = (lines, px, color = c.line) => {
     ctx.beginPath();
     for (const ln of lines) trace(ctx, ln, L, false);
-    ctx.strokeStyle = c.line;
+    ctx.strokeStyle = color;
     ctx.lineWidth = w(px);
     ctx.stroke();
   };
@@ -63,5 +63,9 @@ export function drawMapVector(ctx, vec, opts, L, longSide) {
   if (opts.graticule) strokeLines(vec.graticule, 1.5);
   if (opts.fill) fillRings(vec.land, c.land);
   strokeLines(vec.coast, 2);
+  if (opts.tissot && vec.tissot) {
+    if (c.halo) strokeLines(vec.tissot, 5, c.halo);
+    strokeLines(vec.tissot, 2);
+  }
   strokeLines(vec.outline, 3);
 }

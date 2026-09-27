@@ -608,9 +608,9 @@ function testMapVector(land) {
   const shoelace = (r) => { let s = 0; for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };
   const landFrac = d3.geoArea({ type: 'MultiPolygon', coordinates: data.land.map((poly) => poly.map((ring) => { const r = ring.map(([l, p]) => [l / D, p / D]); return [...r, r[0]]; })) }) / (4 * Math.PI);
   for (const { name, fr } of cases) {
-    const v = buildMapVector(fr, data, { graticule: true });
-    if (!v.sea.length || !v.land.length || !v.coast.length || !v.outline.length) { bad.empty.push(name); continue; }
-    const paths = [...v.sea, ...v.land, ...v.coast, ...v.graticule, ...v.outline];
+    const v = buildMapVector(fr, data, { graticule: true, tissot: true });
+    if (!v.sea.length || !v.land.length || !v.coast.length || !v.outline.length || !v.tissot.length) { bad.empty.push(name); continue; }
+    const paths = [...v.sea, ...v.land, ...v.coast, ...v.graticule, ...v.outline, ...v.tissot];
     if (!paths.every((pts) => pts.every(([x, y]) => Number.isFinite(x) && Number.isFinite(y)))) bad.finite.push(name);
     const lim = 0.5 * (v.bbox.maxX - v.bbox.minX);
     const jumps = (pts, closed) => {
@@ -622,7 +622,7 @@ function testMapVector(land) {
       return false;
     };
     if (v.sea.some((r) => jumps(r, true)) || v.land.some((r) => jumps(r, true)) ||
-      [...v.coast, ...v.graticule, ...v.outline].some((l) => jumps(l, false))) bad.jump.push(name);
+      [...v.coast, ...v.graticule, ...v.outline, ...v.tissot].some((l) => jumps(l, false))) bad.jump.push(name);
     const rings = landFrameRings(fr, data);
     if (!rings.every(({ ring }) => ring.every(([l, p]) => inDomain(fr.domain, l, p)))) bad.domain.push(name);
     if (fr.domain.cuts) {
@@ -636,7 +636,7 @@ function testMapVector(land) {
     }
   }
   const SEC = '15. PNG 벡터';
-  report(SEC, `바다·땅·해안선·테두리 경로가 비어 있지 않음 (${cases.length}개 도법·축)`, bad.empty.length === 0, bad.empty.join(', '));
+  report(SEC, `바다·땅·해안선·테두리·티소 경로가 비어 있지 않음 (${cases.length}개 도법·축)`, bad.empty.length === 0, bad.empty.join(', '));
   report(SEC, '모든 경로 좌표가 유한', bad.finite.length === 0, bad.finite.join(', '));
   report(SEC, '지도 폭의 절반을 넘는 선분 없음 (날짜변경선·절개선을 건너뛰지 않음)', bad.jump.length === 0, bad.jump.join(', '));
   report(SEC, '땅 고리가 모두 도메인 안 (사각·원형)', bad.domain.length === 0, bad.domain.join(', '));
@@ -646,10 +646,10 @@ function testMapVector(land) {
   // 색 규칙표
   const C = (fill, invert) => exportColors({ fill, invert });
   const want = [
-    { sea: '#ffffff', land: '#000000', line: '#000000' },
-    { sea: '#000000', land: '#ffffff', line: '#ffffff' },
-    { sea: null, land: null, line: '#000000' },
-    { sea: null, land: null, line: '#ffffff' },
+    { sea: '#ffffff', land: '#000000', line: '#000000', halo: '#ffffff' },
+    { sea: '#000000', land: '#ffffff', line: '#ffffff', halo: '#000000' },
+    { sea: null, land: null, line: '#000000', halo: null },
+    { sea: null, land: null, line: '#ffffff', halo: null },
   ];
   const got = [C(true, false), C(true, true), C(false, false), C(false, true)];
   report(SEC, '색 규칙표 (채우기 × 색 반전 4경우)', JSON.stringify(got) === JSON.stringify(want), JSON.stringify(got));
@@ -680,6 +680,20 @@ function testMapVector(land) {
   const offColors = new Set(off.calls.map((c) => c[1]));
   report(SEC, '채우기 끔 + 색 반전: 면 없이 흰 선만', offFills === 0 && offColors.size === 1 && offColors.has('#ffffff'), `fill ${offFills}회, 색 ${[...offColors].join(',')}`);
   report(SEC, `저장 크기: 긴 변 ${LONG_SIDE} px`, Math.max(L.width, L.height) === LONG_SIDE, `${L.width} × ${L.height}`);
+
+  // 티소 지표: 채우기면 반대색 테두리(흰) → 선(검) → 지도 테두리(검) 순으로 마지막 세 번. 채우기 끔이면 테두리 없이 선만
+  const vt = buildMapVector(sample, data, { graticule: true, tissot: true });
+  const tOn = record();
+  drawMapVector(tOn.ctx, vt, { fill: true, invert: false, graticule: true, tissot: true }, L, LONG_SIDE);
+  const last3 = tOn.calls.slice(-3).map((c) => c.join(':')).join(' → ');
+  report(SEC, '티소 지표(채우기): 흰 테두리 → 검은 선 → 지도 테두리', last3 === 'stroke:#ffffff → stroke:#000000 → stroke:#000000' && tOn.calls.length === on.calls.length + 2, last3);
+  const tOff = record();
+  drawMapVector(tOff.ctx, vt, { fill: false, invert: false, graticule: true, tissot: true }, L, LONG_SIDE);
+  const tOffColors = new Set(tOff.calls.map((c) => c[1]));
+  report(SEC, '티소 지표(채우기 끔): 반대색 테두리 없이 선만', tOffColors.size === 1 && tOffColors.has('#000000') && tOff.calls.length === off.calls.length + 1, `색 ${[...tOffColors].join(',')}, 호출 ${tOff.calls.length}`);
+  const noT = record();
+  drawMapVector(noT.ctx, vt, { fill: true, invert: false, graticule: true, tissot: false }, L, LONG_SIDE);
+  report(SEC, '티소 지표 끔: 그리지 않음', noT.calls.length === on.calls.length, `호출 ${noT.calls.length}`);
 }
 
 /** 합성 땅으로 원형 도메인 잘라내기·종이 공간 세분을 검증(프레임 = 지리, 항등 회전) */

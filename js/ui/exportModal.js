@@ -1,5 +1,5 @@
 // © 2026 김용현
-// ui/exportModal.js — PNG 저장 모달: 미리보기 + 채우기 · 색 반전 · 경위선, 저장은 긴 변 3000 px 투명 배경 PNG.
+// ui/exportModal.js — PNG 저장 모달: 미리보기 + 채우기 · 색 반전 · 경위선 · 티소 지표, 저장은 긴 변 3000 px 투명 배경 PNG.
 // 그리는 지도 = 지금 종이에 그려진 모양(state.frame() 의 f · domain · rotation), 카메라와 무관한 정면.
 import { prepareMapData, buildMapVector } from '../export/mapVector.js';
 import { drawMapVector, layoutFor, LONG_SIDE } from '../export/drawMap.js';
@@ -11,8 +11,8 @@ const DEFAULTS = { fill: true, invert: false, graticule: true };
 function loadOpts() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { return { ...DEFAULTS }; }
 }
-function saveOpts(o) {
-  try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* 저장 불가 환경 */ }
+function saveOpts({ fill, invert, graticule }) {
+  try { localStorage.setItem(KEY, JSON.stringify({ fill, invert, graticule })); } catch (e) { /* 저장 불가 환경 */ }
 }
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -22,9 +22,10 @@ function el(tag, cls, text) {
 }
 const safeName = (s) => s.replace(/[\\/:*?"<>|]/g, '_');
 
-export function createExportModal({ landTopo, getFrame }) {
+/** getTissot(): 화면의 티소 지표 체크 상태 — 모달을 열 때마다 「티소 지표」 체크박스가 이를 따름(기억하지 않음) */
+export function createExportModal({ landTopo, getFrame, getTissot = () => false }) {
   let data = null, vec = null, fileName = 'map';
-  const opts = loadOpts();
+  const opts = { ...loadOpts(), tissot: false };
 
   const backdrop = el('div', 'modal-backdrop');
   const box = el('div', 'modal');
@@ -44,10 +45,12 @@ export function createExportModal({ landTopo, getFrame }) {
     input.addEventListener('change', () => { opts[key] = input.checked; saveOpts(opts); drawPreview(); });
     wrap.append(input, el('span', 'ctl-label', label));
     optsBox.appendChild(wrap);
+    return input;
   };
   mk('fill', '채우기');
   mk('invert', '색 반전');
   mk('graticule', '경위선');
+  const tissotInput = mk('tissot', '티소 지표');
   const note = el('p', 'modal-note');
   const actions = el('div', 'modal-actions');
   const cancel = el('button', 'chip', '취소');
@@ -101,7 +104,8 @@ export function createExportModal({ landTopo, getFrame }) {
       if (!data) data = prepareMapData(landTopo);
       const fr = getFrame();
       fileName = fr.entry.nameKo;
-      vec = buildMapVector(fr, data, { graticule: true });
+      vec = buildMapVector(fr, data, { graticule: true, tissot: true });
+      opts.tissot = tissotInput.checked = !!getTissot();
       const ok = vec.sea.length > 0 && Number.isFinite(vec.bbox.minX);
       save.disabled = !ok;
       backdrop.classList.add('open');

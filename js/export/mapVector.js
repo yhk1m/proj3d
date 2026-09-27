@@ -5,7 +5,7 @@
 // 잘라내기: 날짜변경선(d3 geoClipAntimeridian 폴리곤 스트림) → 영역(사각 도메인, 구드는 로브별) → 원형 도메인(방위도법).
 import { geoClipAntimeridian } from 'd3-geo';
 import { feature as topoFeature } from 'topojson-client';
-import { coastlines, graticuleLines, splitLines, splitAtCuts } from '../geometry/clip.js';
+import { coastlines, graticuleLines, tissotCircles, splitLines, splitAtCuts } from '../geometry/clip.js';
 import { inDomain } from '../geometry/pipeline.js';
 
 const D = Math.PI / 180;
@@ -31,7 +31,10 @@ export function landPolygons(topo) {
 
 /** 한 번만 준비하면 되는 지리 자료 */
 export function prepareMapData(landTopo) {
-  return { land: landPolygons(landTopo), coast: coastlines(landTopo), graticule: graticuleLines(15) };
+  return {
+    land: landPolygons(landTopo), coast: coastlines(landTopo), graticule: graticuleLines(15),
+    tissot: tissotCircles(4).map((c) => c.line),   // 화면 티소 지표와 같은 원(각반경 4°, 30° 간격)
+  };
 }
 
 // ---- 평면 (λ′, φ′) 고리 도구 ------------------------------------------------
@@ -370,9 +373,9 @@ function bboxOf(paths) {
 
 /**
  * 현재 프레임 → 종이 좌표 경로. fr = { f, domain, rotation } (state.frame() 그대로 넘겨도 됨)
- * 반환: { sea, land (닫힌 고리), coast, graticule, outline (열린 선), bbox }
+ * 반환: { sea, land (닫힌 고리), coast, graticule, outline, tissot (열린 선), bbox }
  */
-export function buildMapVector(fr, data, { graticule = true } = {}) {
+export function buildMapVector(fr, data, { graticule = true, tissot = false } = {}) {
   const f = fr.f;
   const seaFrame = seaFrameRings(fr.domain);
   // 세분 허용 오차: 바다 고리를 거칠게 투영한 지도 폭 기준
@@ -384,5 +387,6 @@ export function buildMapVector(fr, data, { graticule = true } = {}) {
   const coast = frameLines(data.coast, fr).flatMap((ln) => projectLine(ln, f, tol));
   const grat = graticule ? frameLines(data.graticule, fr).flatMap((ln) => projectLine(ln, f, tol)) : [];
   const outline = outlineFrameLines(fr.domain).flatMap((ln) => projectLine(ln, f, tol));
-  return { sea, land, coast, graticule: grat, outline, bbox: bboxOf(sea.length ? sea : outline) };
+  const tis = tissot ? frameLines(data.tissot, fr).flatMap((ln) => projectLine(ln, f, tol)) : [];
+  return { sea, land, coast, graticule: grat, outline, tissot: tis, bbox: bboxOf(sea.length ? sea : outline) };
 }
