@@ -121,8 +121,8 @@ async function main() {
   const pivot = new PivotMarker();
   scene.add(pivot.mesh);
   const PIVOT_KEY = 'proj3d.hidePivot';
-  let hidePivot = false;
-  try { hidePivot = localStorage.getItem(PIVOT_KEY) === '1'; } catch (e) { /* 저장 불가 환경 */ }
+  let hidePivot = true;               // 기본은 숨김 — 사용자가 체크를 풀면('0') 보임
+  try { hidePivot = localStorage.getItem(PIVOT_KEY) !== '0'; } catch (e) { /* 저장 불가 환경 */ }
   pivot.mesh.visible = !hidePivot;
   const rays = new Rays();
   frameGroup.add(rays.group);
