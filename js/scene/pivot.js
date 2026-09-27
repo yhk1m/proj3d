@@ -44,7 +44,7 @@ export function installPivotPicking(canvas, camera, getTargets, onPick) {
   canvas.addEventListener('dblclick', (e) => pick(e.clientX, e.clientY));
   let lastTap = null;
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.pointerType !== 'touch') return;
+    if (e.pointerType !== 'touch' || !e.isPrimary) return;
     const tap = { t: e.timeStamp, x: e.clientX, y: e.clientY };
     if (isDoubleTap(lastTap, tap)) { lastTap = null; pick(e.clientX, e.clientY); } else lastTap = tap;
   });
