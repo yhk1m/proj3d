@@ -192,12 +192,19 @@ export const PROJECTIONS = {
     formulaTex: '\\theta+\\sin\\theta\\cos\\theta+2\\sin\\theta = \\left(2+\\tfrac{\\pi}{2}\\right)\\sin\\varphi',
     captionKo: '극을 점이 아닌 선(적도의 절반)으로 표현한 정적도법. 고위도 대륙의 모양 왜곡이 덜함.',
   },
+  putnins4p: {
+    id: 'putnins4p', nameKo: '퍼트닌시 P4′ 도법', family: 'pseudocylindrical', property: 'equalArea',
+    surface: null, light: null, params: {}, domain: rect(-90, 90),
+    forward: A.putnins4p, derivation: 'putnins4pFromLambert',
+    formulaTex: '\\begin{gathered}\\sin\\theta = \\tfrac{5\\sqrt2}{8}\\sin\\varphi\\\\[2pt] y = 3.8833\\,\\sin\\tfrac{\\theta}{3},\\quad x = 0.8740\\,\\lambda\\,\\frac{\\cos\\theta}{\\cos(\\theta/3)}\\end{gathered}',
+    captionKo: '1934년 라트비아의 퍼트닌시(R. V. Putniņš)가 발표한 정적도법 가운데 하나. 경선은 포물선, 극은 적도 절반 길이의 선. 에케르트 IV 와 함께 Equal Earth 설계의 바탕.',
+  },
   equalEarth: {
     id: 'equalEarth', nameKo: 'Equal Earth 도법', family: 'pseudocylindrical', property: 'equalArea',
     surface: null, light: null, params: {}, domain: rect(-90, 90),
     forward: A.equalEarth, derivation: 'equalEarthFromLambert', modern: true,
     formulaTex: '\\begin{gathered}\\sin\\theta = \\tfrac{\\sqrt3}{2}\\sin\\varphi\\\\[2pt] y = A_1\\theta + A_2\\theta^3 + A_3\\theta^7 + A_4\\theta^9\\end{gathered}',
-    captionKo: '2018년 발표된 정적도법. 로빈슨의 친숙한 외형을 본보기로 삼되(로빈슨을 고친 것이 아님), 정적 조건 위에서 다항식으로 새로 설계해 면적을 정확히 지킴.',
+    captionKo: '2018년 샤브리치·예니·패터슨이 발표한 정적도법. 로빈슨에서 영감을 받았지만(로빈슨을 고친 것이 아님) 면적을 정확히 지킴. 퍼트닌시 P4′ 와 에케르트 IV 를 섞은 모양을 바탕으로 위선 간격을 다항식으로 정의 — 식이 단순해 계산이 빠름.',
   },
   robinson: {
     id: 'robinson', nameKo: '로빈슨 도법', family: 'pseudocylindrical', property: 'compromise',
@@ -242,7 +249,7 @@ export const PICKER_GROUPS = [
   { labelKo: '원통', ids: ['centralCylindrical', 'lambertCylindricalEA', 'equirectangular', 'mercator', 'miller', 'transverseMercator'] },
   { labelKo: '원뿔', ids: ['centralConic', 'equidistantConic', 'lambertConformalConic', 'albers'] },
   { labelKo: '평면', ids: ['gnomonic', 'stereographic', 'orthographic', 'azimuthalEquidistant', 'lambertAzimuthalEA'] },
-  { labelKo: '의사원통', ids: ['sinusoidal', 'mollweide', 'eckert4', 'equalEarth', 'robinson'] },
+  { labelKo: '의사원통', ids: ['sinusoidal', 'mollweide', 'eckert4', 'putnins4p', 'equalEarth', 'robinson'] },
   { labelKo: '변형 방위', ids: ['winkelTripel'] },
   { labelKo: '단열', ids: ['goodeHomolosine'] },
 ];

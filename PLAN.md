@@ -134,7 +134,7 @@
 | `sinusoidal` | 시뉴소이드 도법 | 의사원통 | 정적 | lambertCylindricalEA | 위선을 실제 길이(cos φ)로 축소 |
 | `mollweide` | 몰바이데 도법 | 의사원통 | 정적 | lambertCylindricalEA | 2:1 타원 외곽, 보조각 θ |
 | `eckert4` | 에케르트 IV 도법 | 의사원통 | 정적 | lambertCylindricalEA | 극을 선으로 표현 |
-| `equalEarth` | Equal Earth 도법 | 의사원통 | 정적 | lambertCylindricalEA | 로빈슨의 외형 + 정적성, 다항식 |
+| `equalEarth` | Equal Earth 도법 | 의사원통 | 정적 | lambertCylindricalEA | 퍼트닌시 P4′ → Equal Earth, 로빈슨은 영감 |
 | `robinson` | 로빈슨 도법 | 의사원통 | 절충 | equirectangular | 수식이 아닌 표(table)로 정의 |
 | `winkelTripel` | 빈켈 트리펠 도법 | 변형 방위 | 절충 | equirectangular + aitoff | 두 도법의 산술평균 |
 | `goodeHomolosine` | 구드(호몰로사인) 도법 | 단열 | 정적 | sinusoidal + mollweide | 40°44′ 접합 + 대양 절개 |
@@ -395,11 +395,15 @@ A1 = 1.340264,  A2 = −0.081106,  A3 = 0.000893,  A4 = 0.003796
 
 구현은 `d3-geo`의 `geoEqualEarthRaw`를 쓰고, 위 식은 패널 표시와 검증에 쓴다.
 
-단계:
-1. root = 람베르트 정적원통(축에서 수평으로 나가는 빛). 자막: "면적은 정확하지만 고위도가 납작하게 눌린다."
-2. `equalAreaFamily` → Equal Earth. 자막: "눌린 고위도를 세로로 다시 벌린다. 면적을 지키려면 세로로 늘린 만큼 가로를 줄여야 한다: x = λ·cos φ / Y′(φ)." 패널: spacingGraph + "면적배율 1.00 유지" 배지.
-3. 로빈슨 외곽선 겹치기. 자막: "로빈슨 도법처럼 친숙한 외형을 목표로 다항식 계수 4개를 정했다. 로빈슨과 달리 면적이 정확하다."
-4. 비교 모드 자동 실행: 그린란드:아프리카 면적비를 메르카토르 / 로빈슨 / Equal Earth로 나란히 표시.
+설계 배경(위키백과 「Equal Earth projection」, 2026-09 기준): 로빈슨에서 영감을 받았지만 로빈슨을 고친 것이 아니다. 퍼트닌시 P4′ 와 에케르트 IV 의 특징을 섞은 모양을 시각적 방법으로 다듬어 바탕으로 삼고, 그 위선 간격을 다항식으로 옮겨 식을 얻었다. 퍼트닌시 P4′ 는 d3 에 없어 `adjusted.putnins4p`(PROJ `putp4p` 상수)로 구현한다.
+
+단계 (2026-09-28 개정):
+1. root = 람베르트 정적원통(축에서 수평으로 나가는 빛) — 이 앱의 구성이며 실제 설계가 람베르트를 거친 것은 아님을 자막에 명시.
+2. `equalAreaFamily` → 퍼트닌시 P4′. 비교 = 에케르트 IV(또 하나의 바탕). 패널: spacingGraph + "면적배율 1.00 유지".
+3. `equalAreaFamily` → Equal Earth. 비교 = 에케르트 IV. 결과가 두 바탕 사이(에케르트 IV 쪽에 가까움), 극선 적도의 0.59 배, 가로세로비 2.05458 : 1.
+4. 로빈슨 외곽선 겹치기 — 영감을 준 외형, 면적 정확성의 대가(중앙경선 ±40.4° 에서만 모양 정확, 적도 부근 최대 1.35).
+5. 그린란드:아프리카 면적비를 메르카토르 / 로빈슨 / Equal Earth로 나란히 표시.
+6. 연혁 — 2017 보스턴 공립학교 갈-페터스 채택 논란 → 2018 발표 → NASA GISS 2018년 7월 기온 편차 지도 → 2026-09-04 유엔 총회 「Correct the Map」 결의(비구속).
 
 ### 9.4 로빈슨 (`robinsonFromEquirect`)
 

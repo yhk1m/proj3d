@@ -38,10 +38,24 @@ export function countryRings(topo, filter) {
   return polys;
 }
 
-/** 15° 경위선 */
-export function graticuleLines(stepDeg = 15) {
-  const g = geoGraticule().step([stepDeg, stepDeg]).precision(2);
-  return g().coordinates.map(ringToLine);
+/**
+ * 15° 경위선. d3 는 경선을 극·적도·극 3점으로만 주고 사이 곡선은 d3 투영의 재표본화에 맡기는데,
+ * 이 앱은 정점을 직접 투영하므로 그대로 쓰면 경선이 꺾은 직선이 된다 → 모든 선을 precision 간격으로 촘촘히.
+ */
+export function graticuleLines(stepDeg = 15, precision = 2) {
+  const g = geoGraticule().step([stepDeg, stepDeg]).precision(precision);
+  return g().coordinates.map((line) => ringToLine(densify(line, precision)));
+}
+
+/** 경위도 선분을 maxDeg 이하 간격으로 선형 보간(경위선은 경선·위선이라 경위도 선형 보간이 곧 그 선 위) */
+function densify(line, maxDeg) {
+  const out = [line[0]];
+  for (let i = 1; i < line.length; i++) {
+    const [l0, p0] = line[i - 1], [l1, p1] = line[i];
+    const n = Math.max(1, Math.ceil(Math.max(Math.abs(l1 - l0), Math.abs(p1 - p0)) / maxDeg));
+    for (let k = 1; k <= n; k++) out.push([l0 + (l1 - l0) * k / n, p0 + (p1 - p0) * k / n]);
+  }
+  return out;
 }
 
 /** 경위선 교점(광선 시작점). 위도 −75°~75°, 15° 간격. 지리좌표 라디안 [λ, φ] 배열 */

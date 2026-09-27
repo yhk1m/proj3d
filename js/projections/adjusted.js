@@ -72,6 +72,13 @@ export function mollweide(lam, phi) { return geoMollweideRaw(lam, phi); }
 export function eckert4(lam, phi) { return geoEckert4Raw(lam, phi); }
 export function equalEarth(lam, phi) { return geoEqualEarthRaw(lam, phi); }
 
+// 퍼트닌시 P4′ (d3 에 없음 — PROJ putp4p 와 같은 상수). sin θ = (5√2/8)·sin φ, 극은 적도 절반 길이의 선.
+const P4P_K = 5 * Math.SQRT2 / 8, P4P_CX = 0.874038744, P4P_CY = 3.883251825;
+export function putnins4p(lam, phi) {
+  const th = Math.asin(P4P_K * Math.sin(phi));
+  return [P4P_CX * lam * Math.cos(th) / Math.cos(th / 3), P4P_CY * Math.sin(th / 3)];
+}
+
 export function robinson(lam, phi) {
   const p = geoRobinsonRaw(lam, phi);
   return [p[0] * ROBINSON_SCALE, p[1] * ROBINSON_SCALE];

@@ -12,7 +12,7 @@ import { bend, coneGeometry } from '../js/geometry/bend.js';
 import { makeRotation, aspectSpec, ASPECT_PRESETS, unitVector } from '../js/geometry/rotate.js';
 import { inDomain, paperPosition } from '../js/geometry/pipeline.js';
 import { lightPosition } from '../js/projections/perspective.js';
-import { coastlines, splitLines, splitAtCuts, hasSeamCrossing, countryRings, projectedArea, AFRICA_FILTER, GREENLAND_FILTER } from '../js/geometry/clip.js';
+import { coastlines, graticuleLines, splitLines, splitAtCuts, hasSeamCrossing, countryRings, projectedArea, AFRICA_FILTER, GREENLAND_FILTER } from '../js/geometry/clip.js';
 import { GOODE_CUTS, goodeLobeIndex, goodeHomolosine, homolosine } from '../js/projections/adjusted.js';
 import { buildGridTopology, scatterTriangles, fixLobeSeams } from '../js/geometry/mesh.js';
 import { makeGridParam, positionOf } from '../js/geometry/pipeline.js';
@@ -237,6 +237,7 @@ function testDistortion() {
     ['시뉴소이드', P.sinusoidal, {}, 80],
     ['몰바이데', P.mollweide, {}, 80],
     ['에케르트 IV', P.eckert4, {}, 80],
+    ['퍼트닌시 P4′', P.putnins4p, {}, 80],
     ['Equal Earth', P.equalEarth, {}, 80],
   ];
   for (const [name, e, params, latMax] of ea) {
@@ -283,7 +284,7 @@ function testDistortion() {
 function testEqualAreaFamily() {
   const P = PROJECTIONS;
   const fA = (l, p) => P.lambertCylindricalEA.forward(l, p, { phi0: 0 });
-  for (const target of ['equalEarth', 'sinusoidal', 'mollweide', 'eckert4']) {
+  for (const target of ['equalEarth', 'sinusoidal', 'mollweide', 'eckert4', 'putnins4p']) {
     const fB = (l, p) => P[target].forward(l, p, {});
     let worst = 0, worstT = 0;
     for (const t of [0, 0.25, 0.5, 0.75, 1]) {
@@ -292,6 +293,17 @@ function testEqualAreaFamily() {
       if (r.worst > worst) { worst = r.worst; worstT = t; }
     }
     report('5. 정적성 보존 모핑', `람베르트 정적원통 → ${P[target].nameKo} — t = 0, .25, .5, .75, 1 면적배율 = 1 ± 0.01`, worst < 0.01, `최대 |s−1| ${fmt(worst)} (t=${worstT})`);
+  }
+  // Equal Earth 시나리오 ②: 퍼트닌시 P4′ → Equal Earth (람베르트가 아닌 도법에서 출발)
+  {
+    const deriv = DERIVATIONS.equalEarthFromLambert;
+    let worst = 0, worstT = 0;
+    for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+      const sp = stepProjection(deriv, 1, t, {});
+      const r = scanDistortion(sp.f, sp.domain, 85, 'area');
+      if (r.worst > worst) { worst = r.worst; worstT = t; }
+    }
+    report('5. 정적성 보존 모핑', `퍼트닌시 P4′ → Equal Earth (Equal Earth ②) — t = 0, .25, .5, .75, 1 면적배율 = 1 ± 0.01`, worst < 0.01, `최대 |s−1| ${fmt(worst)} (t=${worstT})`);
   }
 }
 
@@ -531,6 +543,29 @@ function testGraphLabels() {
 }
 
 // ---------------------------------------------------------------------------
+// 14. 경위선 표본 간격
+// ---------------------------------------------------------------------------
+function testGraticule() {
+  const lines = graticuleLines(15);
+  let worst = 0;
+  for (const ln of lines) for (let i = 2; i < ln.length; i += 2) {
+    worst = Math.max(worst, Math.abs(ln[i] - ln[i - 2]) / D, Math.abs(ln[i + 1] - ln[i - 1]) / D);
+  }
+  report('14. 경위선', `모든 경위선 선분 간격 ≤ 2° (${lines.length}개 선) — 정점을 직접 투영하므로 곡선 경선에 필요`, worst <= 2 + 1e-9, `최대 간격 ${worst.toFixed(3)}°`);
+  // Equal Earth 경선 λ = 180° 가 실제로 휘는지: 45° 에서의 x 가 적도·극을 잇는 직선보다 바깥
+  const mer = lines.find((ln) => Math.abs(Math.abs(ln[0]) - Math.PI) < 1e-9 && ln.length > 40 && ln.every((v, i) => i % 2 || v === ln[0]));
+  const f = (l, p) => PROJECTIONS.equalEarth.forward(l, p, {});
+  let dev = 0;
+  if (mer) for (let i = 0; i < mer.length; i += 2) {
+    const [x, y] = f(mer[i], mer[i + 1]);
+    const [xe] = f(mer[i], 0), [xp, yp] = f(mer[i], Math.sign(mer[i + 1]) * Math.PI / 2 || 1);
+    const chord = xe + (xp - xe) * (Math.abs(y) / Math.abs(yp));
+    dev = Math.max(dev, Math.abs(x) - Math.abs(chord));
+  }
+  report('14. 경위선', 'Equal Earth 가장자리 경선이 곡선으로 그려짐 (직선 현보다 바깥으로 0.1 이상)', !!mer && dev > 0.1, `최대 벗어남 ${fmt(dev)}`);
+}
+
+// ---------------------------------------------------------------------------
 // 13. 리모컨 재생 상태: 일시정지·이전·스크럽은 진행을 그 자리에서 멈춰야 한다 — 자동 재생의 "한 단계 끝 → 1초 뒤 다음 단계" 대기 중에도.
 function testPlayback() {
   const sec = '13. 리모컨 재생';
@@ -583,5 +618,6 @@ export async function runAll({ loadJSON } = {}) {
   testGoode(land);
   testGraphLabels();
   testPlayback();
+  testGraticule();
   return results.slice();
 }
