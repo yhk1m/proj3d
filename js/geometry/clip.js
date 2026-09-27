@@ -120,7 +120,9 @@ export function splitAtCuts(lines, cuts, eps = 1e-6) {
       const l0 = line[i - 2], p0 = line[i - 1], l1 = line[i], p1 = line[i + 1];
       let best = null;
       const consider = (c, north) => {
-        if (!((l0 < c && l1 > c) || (l0 > c && l1 < c))) return;
+        // 절개선 위의 점(λ = c)은 동쪽 로브로 평가된다(goodeLobeIndex) → 양 끝이 c 기준 서로 다른 쪽이면 나눈다.
+        // 선분 끝이 정확히 c 인 경우(s = 1)와 c 에서 서쪽으로 떠나는 경우(s = 0)도 포함, 경선을 따라가는 선(l0 = l1 = c)은 제외.
+        if ((l0 < c) === (l1 < c)) return;
         const s = (c - l0) / (l1 - l0);
         const pc = p0 + (p1 - p0) * s;
         if ((north && pc < 0) || (!north && pc >= 0)) return; // 그 반구의 절개선이 아니다
@@ -132,6 +134,7 @@ export function splitAtCuts(lines, cuts, eps = 1e-6) {
         cur.push(best.c - best.dir * eps, best.pc);
         out.push(Float64Array.from(cur));
         cur = [best.c + best.dir * eps, best.pc];
+        if (best.s === 1) continue; // 끝점이 절개선 위: 방금 넣은 c ± ε 가 곧 그 점, 정확한 c 를 다시 넣지 않는다
       }
       cur.push(l1, p1);
     }

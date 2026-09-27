@@ -476,6 +476,18 @@ function testGoode(land) {
     }
     report('11. 구드 호몰로사인', `해안선 절개선 분할: 로브 경계를 걸치는 선분 없음 (${segs}개 선분)`, bad === 0, `걸침 ${bad}`);
   }
+  // 경위선: 2° 간격 정점이 절개선(−40°, −100°, −20°, 80°) 위에 정확히 놓인다 → 그 정점에서도 나뉘어야 한다
+  {
+    const lines = splitAtCuts(splitLines(graticuleLines(15), makeRotation(aspectSpec('normal', 'cylinder'))), GOODE_CUTS);
+    let bad = 0, segs = 0;
+    for (const line of lines) for (let i = 2; i < line.length; i += 2) {
+      const p0 = line[i - 1], p1 = line[i + 1];
+      if ((p0 >= 0) !== (p1 >= 0)) continue;
+      segs++;
+      if (goodeLobeIndex(line[i - 2], p0) !== goodeLobeIndex(line[i], p1)) bad++;
+    }
+    report('11. 구드 호몰로사인', `경위선 절개선 분할: 로브 경계를 걸치는 선분 없음 (${segs}개 선분)`, bad === 0, `걸침 ${bad}`);
+  }
   // 격자 메시: 절개 모핑 t = 0.5, 1 에서 로브 경계를 걸치는 삼각형 없음
   const deriv = DERIVATIONS.goodeFromParts;
   const params = { phi0: 0 };
