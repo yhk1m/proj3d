@@ -114,6 +114,8 @@ body.side-collapsed #side .side-panel { width: var(--side-w); }   /* 접히는 �
 .sp-copy { margin-top: auto; padding-top: 14px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--navy-line); }
 .sp-copy a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .sp-copy a:hover { color: var(--accent); }
+.sp-family { margin-bottom: 10px; }
+.sp-family .bgnl-fam__btn { color: #c5d0e1; }
 .sp-title { margin: 0; font-size: 17px; font-weight: 600; color: #c5d0e1; }
 .sp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .chip-i { font-size: 11px; color: var(--muted); border: 1px solid var(--navy-line); border-radius: 999px; padding: 1px 8px; }
@@ -313,6 +315,7 @@ body.projector #topbar button, body.projector #stepper button { font-size: 16px;
 #topbar .picker-item.on { background: rgba(255,209,102,0.15); }
 
 @media (max-width: 860px) {
+  #side .bgnl-fam__list { max-height: 26dvh; }   /* 아래 시트(40dvh) 안에서 잘리지 않게 */
   body { font-size: 13px; --tool-height: 34px; }
   /* 헤더: 브랜드 아이콘 · 도법 선택 · 햄버거 */
   #topbar { padding: 6px 10px; gap: 8px; }
