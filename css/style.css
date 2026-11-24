@@ -115,7 +115,8 @@ body.side-collapsed #side .side-panel { width: var(--side-w); }   /* 접히는 �
 .sp-copy a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .sp-copy a:hover { color: var(--accent); }
 .sp-family { margin-bottom: 10px; }
-.sp-family .bgnl-fam__btn { color: #c5d0e1; }
+.sp-family .bgnl-fam__btn, .sp-family .bgnl-fam__link { color: #c5d0e1; text-decoration: none; }
+.sp-family .bgnl-fam__link:hover { color: var(--accent); }
 .sp-title { margin: 0; font-size: 17px; font-weight: 600; color: #c5d0e1; }
 .sp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .chip-i { font-size: 11px; color: var(--muted); border: 1px solid var(--navy-line); border-radius: 999px; padding: 1px 8px; }
