@@ -111,10 +111,11 @@ body.side-collapsed #side .side-panel { width: var(--side-w); }   /* 접히는 �
 .fatal { position: absolute; inset: 0; display: grid; place-items: center; color: var(--warn); }
 
 .side-panel { padding: 22px 20px 16px; display: flex; flex-direction: column; gap: 16px; min-height: 100%; }
-.sp-copy { margin-top: auto; padding-top: 14px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--navy-line); }
+.sp-copy { margin-top: auto; padding-top: 14px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--navy-line); display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+.sp-copy-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sp-copy a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .sp-copy a:hover { color: var(--accent); }
-.sp-family { margin-bottom: 10px; }
+.sp-family { flex: 0 0 auto; }
 .sp-family .bgnl-fam__btn, .sp-family .bgnl-fam__link { color: #c5d0e1; text-decoration: none; }
 .sp-family .bgnl-fam__link:hover { color: var(--accent); }
 .sp-title { margin: 0; font-size: 17px; font-weight: 600; color: #c5d0e1; }

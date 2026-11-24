@@ -270,11 +270,12 @@ export function mountSidePanel(container) {
   const copy = el('div', 'sp-copy');
   const family = el('div', 'sp-family');   // 패밀리 사이트 드롭다운 자리 (https://bgnl.kr/family.js 가 그린다)
   family.setAttribute('data-bgnl-family', '');
-  copy.appendChild(family);
-  copy.append('ⓒ 2026 양정고등학교 지리교사 김용현T | ');
+  const copyText = el('span', 'sp-copy-text');
+  copyText.append('ⓒ 2026 양정고등학교 지리교사 김용현T | ');
   const link = el('a', null, 'https://bgnl.kr');
   link.href = 'https://bgnl.kr'; link.target = '_blank'; link.rel = 'noopener';
-  copy.appendChild(link);
+  copyText.appendChild(link);
+  copy.append(copyText, family);   // 저작권 글과 Family Sites 버튼을 한 줄에
   root.append(head, stageTitle, cap, lightBox, usageBox, badge, texWrap, panel, readout, copy);
   container.appendChild(root);
 
