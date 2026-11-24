@@ -275,6 +275,7 @@ export function mountSidePanel(container) {
   const link = el('a', null, 'https://bgnl.kr');
   link.href = 'https://bgnl.kr'; link.target = '_blank'; link.rel = 'noopener';
   copyText.appendChild(link);
+  copyText.title = 'ⓒ 2026 양정고등학교 지리교사 김용현T | https://bgnl.kr';   // 좁아서 줄임표로 잘려도 전체 글을 볼 수 있게
   copy.append(copyText, family);   // 저작권 글과 Family Sites 버튼을 한 줄에
   root.append(head, stageTitle, cap, lightBox, usageBox, badge, texWrap, panel, readout, copy);
   container.appendChild(root);
