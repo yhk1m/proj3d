@@ -46,7 +46,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '① 메르카토르로 조정',
-        captionKo: '먼저 정각 조건으로 메르카토르를 만듦. 극은 무한대 — 그릴 수 없음.',
+        captionKo: '먼저 정각 조건으로 메르카토르를 만듦. 극은 무한대, 그릴 수 없음.',
         formulaTex: 'y = \\ln\\tan\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right)',
         morph: { type: 'lerp', to: 'mercator' },
         panel: 'spacingGraph',
@@ -79,7 +79,7 @@ export const DERIVATIONS = {
     steps: [
       {
         titleKo: '위선 간격을 정각 조건에 맞게 조정',
-        captionKo: '두 표준위선(30°, 60°)에서 축척이 1이 되도록 원뿔상수 n 과 반지름 ρ(φ) 를 정함. 메르카토르와 같은 원리 — 세로 간격을 가로 늘어남에 맞춤.',
+        captionKo: '두 표준위선(30°, 60°)에서 축척이 1이 되도록 원뿔상수 n 과 반지름 ρ(φ) 를 정함. 메르카토르와 같은 원리, 세로 간격을 가로 늘어남에 맞춤.',
         formulaTex: '\\begin{gathered}\\rho = F\\cot^{n}\\!\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right)\\\\[2pt] n = \\frac{\\ln(\\cos\\varphi_1/\\cos\\varphi_2)}{\\ln\\!\\left(\\tan(\\tfrac{\\pi}{4}+\\tfrac{\\varphi_2}{2})\\big/\\tan(\\tfrac{\\pi}{4}+\\tfrac{\\varphi_1}{2})\\right)}\\end{gathered}',
         morph: { type: 'lerp', to: 'lambertConformalConic' },
         panel: 'spacingGraph',
@@ -130,8 +130,8 @@ export const DERIVATIONS = {
     root: 'lambertCylindricalEA',
     steps: [
       {
-        titleKo: '① 설계의 바탕 — 퍼트닌시 P4′ (정적성 유지)',
-        captionKo: 'Equal Earth(2018)의 바탕은 두 정적도법, 퍼트닌시 P4′ 와 에케르트 IV 를 섞은 모양. 이 앱에서는 빛으로 만들 수 있는 람베르트 정적원통에서 출발해 먼저 퍼트닌시 P4′ 로 옮김(실제 설계가 람베르트를 거친 것은 아님): 위선 간격을 바꾸되 가로를 x = λ·cos φ / Y′(φ) 로 맞춰 면적 유지. 반투명 선 = 또 하나의 바탕인 에케르트 IV.',
+        titleKo: '① 설계의 바탕, 퍼트닌시 P4′ (정적성 유지)',
+        captionKo: 'Equal Earth(2018)의 바탕은 두 정적도법, 퍼트닌시 P4′ 와 에케르트 IV 를 섞은 모양. 이 앱에서는 빛으로 만들 수 있는 람베르트 정적원통에서 출발해 먼저 퍼트닌시 P4′ 로 옮김(실제 설계가 람베르트를 거친 것은 아님): 위선 간격을 바꾸되 가로를 x = λ⋅cos φ / Y′(φ) 로 맞춰 면적 유지. 반투명 선 = 또 하나의 바탕인 에케르트 IV.',
         formulaTex: 'y = Y(\\varphi),\\qquad x = \\lambda\\,\\frac{\\cos\\varphi}{Y\'(\\varphi)}',
         morph: { type: 'equalAreaFamily', to: 'putnins4p' },
         panel: 'spacingGraph',
@@ -139,8 +139,8 @@ export const DERIVATIONS = {
         compare: 'eckert4',
       },
       {
-        titleKo: '② 위선 간격을 다항식으로 — Equal Earth',
-        captionKo: '두 바탕을 섞은 모양을 시각적 방법으로 다듬은 뒤, 위선 간격을 보조각 θ 의 다항식으로 정의. 가로는 정적 조건이 자동 결정. 결과: 위선의 위치·길이는 두 도법 사이(에케르트 IV 쪽에 가까움), 극선은 적도의 약 0.59 배(두 도법은 0.5 배), 가로세로비 2.05458 : 1.',
+        titleKo: '② 위선 간격을 다항식으로, Equal Earth',
+        captionKo: '두 바탕을 섞은 모양을 시각적 방법으로 다듬은 뒤, 위선 간격을 보조각 θ 의 다항식으로 정의. 가로는 정적 조건이 자동 결정. 결과: 위선의 위치, 길이는 두 도법 사이(에케르트 IV 쪽에 가까움), 극선은 적도의 약 0.59 배(두 도법은 0.5 배), 가로세로비 2.05458 : 1.',
         formulaTex: '\\begin{gathered}\\sin\\theta = \\tfrac{\\sqrt3}{2}\\sin\\varphi\\\\[2pt] y = A_1\\theta + A_2\\theta^3 + A_3\\theta^7 + A_4\\theta^9\\end{gathered}',
         morph: { type: 'equalAreaFamily', to: 'equalEarth' },
         panel: 'spacingGraph',
@@ -149,7 +149,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '③ 영감을 준 로빈슨과 비교',
-        captionKo: '널리 쓰이던 로빈슨에서 영감을 받은 외형. 빨간 선 = 로빈슨. 로빈슨은 정적이 아니어서 고위도가 커 보이고, Equal Earth 는 면적이 정확 — 대신 대륙 모양이 찌그러짐: 중앙경선의 위도 40.4° 에서만 모양이 정확, 그보다 적도 쪽은 남북으로 길쭉(최대 1.35 배), 극 쪽은 동서로 길쭉.',
+        captionKo: '널리 쓰이던 로빈슨에서 영감을 받은 외형. 빨간 선 = 로빈슨. 로빈슨은 정적이 아니어서 고위도가 커 보이고, Equal Earth 는 면적이 정확, 대신 대륙 모양이 찌그러짐: 중앙경선의 위도 40.4° 에서만 모양이 정확, 그보다 적도 쪽은 남북으로 길쭉(최대 1.35 배), 극 쪽은 동서로 길쭉.',
         formulaTex: null,
         morph: null,
         panel: 'none',
@@ -157,7 +157,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '④ 그린란드 : 아프리카 면적비',
-        captionKo: '실제 면적비 약 1 : 14(그린란드는 아프리카의 약 7%). 메르카토르·로빈슨·Equal Earth 에서 지도상 면적비가 어떻게 달라지는지 비교.',
+        captionKo: '실제 면적비 약 1 : 14(그린란드는 아프리카의 약 7%). 메르카토르, 로빈슨, Equal Earth 에서 지도상 면적비가 어떻게 달라지는지 비교.',
         formulaTex: null,
         morph: null,
         panel: 'areaRatio',
@@ -165,7 +165,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '⑤ 연혁',
-        captionKo: '2017년 3월 보스턴 공립학교의 갈-페터스 도법 채택과 그 극지방 왜곡 논란이 계기. 보기 좋은 정적 세계지도를 찾지 못한 샤브리치·예니·패터슨이 2018년 새로 발표. 같은 해 NASA GISS 의 2018년 7월 기온 편차 지도가 가장 이른 주제도 사례 가운데 하나. 2026년 9월 유엔 총회 「Correct the Map」 결의(찬성 164·기권 6·반대 1): 항해 외 용도의 메르카토르 지양, 정적도법 사용 권장, Equal Earth 를 선택지로 언급 — 구속력은 없음. 제작자들 스스로도 정적도법은 만능이 아니며 면적이 꼭 필요할 때 쓰는 도법이라고 강조.',
+        captionKo: '2017년 3월 보스턴 공립학교의 갈-페터스 도법 채택과 그 극지방 왜곡 논란이 계기. 보기 좋은 정적 세계지도를 찾지 못한 샤브리치, 예니, 패터슨이 2018년 새로 발표. 같은 해 NASA GISS 의 2018년 7월 기온 편차 지도가 가장 이른 주제도 사례 가운데 하나. 2026년 9월 유엔 총회 「Correct the Map」 결의(찬성 164, 기권 6, 반대 1): 항해 외 용도의 메르카토르 지양, 정적도법 사용 권장, Equal Earth 를 선택지로 언급, 구속력은 없음. 제작자들 스스로도 정적도법은 만능이 아니며 면적이 꼭 필요할 때 쓰는 도법이라고 강조.',
         formulaTex: null,
         morph: null,
         panel: 'none',
@@ -185,7 +185,7 @@ export const DERIVATIONS = {
         panel: 'spacingGraph',
       },
       {
-        titleKo: '② Y 표 적용 — 위선의 세로 위치',
+        titleKo: '② Y 표 적용, 위선의 세로 위치',
         captionKo: '각 위선을 표의 Y(φ) 값(적도로부터 거리 비)에 따라 옮김. 40° 까지는 거의 등간격, 고위도에서 간격이 좁아짐.',
         formulaTex: 'y = 1.3523\\,Y(\\varphi)',
         morph: {
@@ -198,7 +198,7 @@ export const DERIVATIONS = {
         panel: 'robinsonTable',
       },
       {
-        titleKo: '③ X 표 적용 — 위선의 길이',
+        titleKo: '③ X 표 적용, 위선의 길이',
         captionKo: '각 위선을 표의 X(φ) 비율로 줄임. 극은 점이 아니라 적도 길이의 0.5322배인 선.',
         formulaTex: 'x = 0.8487\\,X(\\varphi)\\,\\lambda',
         morph: {
@@ -212,7 +212,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '④ 수식이 없는 도법',
-        captionKo: '로빈슨 도법에는 수식이 없음. "보기 좋은" 세계지도를 목표로 시행착오 끝에 정한 표가 곧 정의. 그래서 정각도 정적도 아닌 절충 도법 — 티소 지표로 확인.',
+        captionKo: '로빈슨 도법에는 수식이 없음. "보기 좋은" 세계지도를 목표로 시행착오 끝에 정한 표가 곧 정의. 그래서 정각도 정적도 아닌 절충 도법, 티소 지표로 확인.',
         formulaTex: null,
         morph: null,
         panel: 'robinsonTable',
@@ -321,7 +321,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '④ 등장방형과 산술평균',
-        captionKo: '등장방형(표준위선 φ₁ = arccos(2/π) ≈ 50°28′)과 아이토프를 나란히 놓고 두 좌표의 산술평균. "트리펠" = 면적·각·거리 세 왜곡을 모두 조금씩 줄였다는 뜻.',
+        captionKo: '등장방형(표준위선 φ₁ = arccos(2/π) ≈ 50°28′)과 아이토프를 나란히 놓고 두 좌표의 산술평균. "트리펠" = 면적, 각, 거리 세 왜곡을 모두 조금씩 줄였다는 뜻.',
         formulaTex: '(x, y) = \\tfrac12\\left[\\,\\text{Aitoff}(\\lambda,\\varphi) + (\\lambda\\cos\\varphi_1,\\ \\varphi)\\,\\right]',
         morph: { type: 'lerp', to: 'winkelTripel' },
         panel: 'blend',
@@ -334,7 +334,7 @@ export const DERIVATIONS = {
     root: 'lambertCylindricalEA',
     steps: [
       {
-        titleKo: '① 시뉴소이드와 몰바이데 — 둘 다 정적, 장점이 다름',
+        titleKo: '① 시뉴소이드와 몰바이데, 둘 다 정적, 장점이 다름',
         captionKo: '시뉴소이드(노란 지도)는 저위도 모양이 자연스럽고, 몰바이데(빨간 선)는 고위도 모양이 자연스러움. 둘 다 정적도법. 두 외곽선이 만나는 위도 = 위선 길이가 같아지는 40°44′.',
         formulaTex: '\\text{Sinusoidal: } x = \\lambda\\cos\\varphi \\qquad \\text{Mollweide: } x = \\tfrac{2\\sqrt2}{\\pi}\\lambda\\cos\\theta',
         morph: { type: 'equalAreaFamily', to: 'sinusoidal' },
@@ -352,7 +352,7 @@ export const DERIVATIONS = {
       },
       {
         titleKo: '③ 대양을 따라 찢기 = 단열',
-        captionKo: '대륙이 잘리지 않도록 대서양·태평양·인도양에서 절개. 북반구 2개, 남반구 4개 로브가 각자 중앙경선을 기준으로 다시 그려져 모양 왜곡이 크게 줄고, 면적은 그대로. 적도에서는 모든 로브가 이어짐.',
+        captionKo: '대륙이 잘리지 않도록 대서양, 태평양, 인도양에서 절개. 북반구 2개, 남반구 4개 로브가 각자 중앙경선을 기준으로 다시 그려져 모양 왜곡이 크게 줄고, 면적은 그대로. 적도에서는 모든 로브가 이어짐.',
         formulaTex: 'x = \\lambda_0 + x(\\lambda-\\lambda_0,\\ \\varphi),\\qquad \\lambda_0 = \\text{로브 중앙경선}',
         morph: {
           type: 'custom',

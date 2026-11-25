@@ -1,0 +1,420 @@
+/* © 2026 양정고등학교 지리교사 김용현 (bgnlkim@gmail.com) */
+/*
+  한국 제품 UI 토큰
+  사용법
+    1. 이 파일을 프로젝트에 복사한다.
+    2. 테마색: 아래 "테마색" 블록의 값만 바꾼다. 나머지 강조 계열 색은 자동으로 계산된다.
+    3. 다이얼: <html data-density="compact"> 또는 <section data-density="compact">로 촘촘 모드,
+               data-personality="brand"로 브랜드 개성. 둘 다 없으면 편안 + 담백.
+    4. 다크 모드: 시스템 설정을 따르고, data-theme="light|dark"로 강제할 수 있다.
+       data-theme="dark"는 html뿐 아니라 화면 일부(section)에도 붙일 수 있다.
+    5. 상태색과 주색은 흰 바탕과 회색(gray-100) 바탕 모두에서 4.5:1을 넘는 값이다.
+  글꼴: Pretendard를 따로 불러온다.
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+*/
+
+:root {
+  /* ===== 테마색 (여기만 바꾼다) ===== */
+  /* Projection 3D: 원래 색 그대로. 네이비 #1B2A4A + 빛 노랑 #FFD166 */
+  --accent-light: #1b2a4a;       /* 주색, 라이트 (흰 바탕 대비 14.2) */
+  --on-accent-light: #ffffff;
+  --accent-dark: #ffd166;        /* 주색, 다크 (네이비 면 대비 9.9) */
+  --on-accent-dark: #1b2a4a;     /* 노랑 위 글자 (대비 9.9) */
+  --second-base: #1b2a4a;        /* 보조색: 네이비, 머리 띠와 면 */
+  --third-base: #7ee0a8;         /* 셋째 색: 원래 초록, '쓰이는 곳' 표시에만 */
+  --on-third: #0b2a1a;
+  /* 개나리처럼 밝은 주색이면 아래 줄의 주석을 풀어 강조 글자를 진한 글자로 둔다 */
+  /* --accent-text-override: var(--text-strong); */
+
+  /* ===== 회색 10단계 (남색 기운) ===== */
+  --gray-50: #f8f9fb;
+  --gray-100: #f1f3f6;
+  --gray-200: #e4e7ec;
+  --gray-300: #d0d5dd;
+  --gray-400: #a9b1bd;
+  --gray-500: #868f9c;
+  --gray-600: #646d7a;
+  --gray-700: #4a5260;
+  --gray-800: #2f3640;
+  --gray-900: #1a1e25;
+
+  /* ===== 역할 색, 라이트 ===== */
+  --bg: var(--gray-100);              /* 바탕 */
+  --surface: #ffffff;                 /* 흰 면 */
+  --surface-raised: #ffffff;          /* 떠 있는 면 (시트, 메뉴) */
+  --fill-subtle: var(--gray-100);     /* 회색 버튼, 선택한 줄 */
+  --text-strong: var(--gray-900);
+  --text: var(--gray-700);
+  --text-muted: var(--gray-600);      /* 보조 글. 흰 바탕 대비 5.2 */
+  --icon-muted: var(--gray-500);      /* 화살표, 빈 체크 같은 장식 아이콘. 글자에는 쓰지 않음 (대비 3.3) */
+  --text-disabled: var(--gray-400);
+  --line: rgba(16, 24, 40, 0.08);
+  --line-strong: rgba(16, 24, 40, 0.16);
+  --focus: #2a64d4;
+
+  --positive: #0b7a52;  --positive-weak: #e6f5ee;
+  --warning:  #a0560a;  --warning-weak:  #fdf1e3;
+  --critical: #c8293a;  --critical-weak: #fdecee;
+  --info:     #2a64d4;  --info-weak:     #eaf1fd;
+
+  --accent: var(--accent-light);
+  --on-accent: var(--on-accent-light);
+  --second: var(--second-base);
+  --third: var(--third-base);
+
+  /* ===== 글자 (편안 기본) ===== */
+  --font: "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-display: var(--font);   /* 브랜드 개성에서만 바뀜 */
+  --fs-caption: 0.8125rem;  /* 13 */
+  --fs-small: 0.875rem;     /* 14 */
+  --fs-body: 1rem;          /* 16 */
+  --fs-body-lg: 1.0625rem;  /* 17 */
+  --fs-title-s: 1.25rem;    /* 20 */
+  --fs-title: 1.5rem;       /* 24 */
+  --fs-title-l: 1.875rem;   /* 30 */
+  --lh-body: 1.5;
+  --lh-title: 1.35;
+  --ls-title: -0.025em;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ===== 크기 (편안) ===== */
+  --row-h: 3.5rem;          /* 목록 한 줄 56 */
+  --btn-h: 3.25rem;         /* 주요 버튼 52 */
+  --btn-h-s: 2.5rem;        /* 작은 버튼 40 */
+  --touch: 2.75rem;         /* 최소 터치 영역 44 */
+  --field-h: 2.75rem;       /* 입력 칸, 선택 상자 높이 44 */
+  --page-x: 1.25rem;        /* 화면 좌우 여백 20 (태블릿 세로 24, 가로 32) */
+  --header-h: 3.5rem;       /* 머리 막대 56 */
+  --tabbar-h: 3.5rem;       /* 아래 탭 막대 56 (안전 영역 따로 더함) */
+  --rail-w: 5rem;           /* 태블릿 가로 왼쪽 메뉴 막대 80 */
+  --content-max: 40rem;     /* 태블릿 이상 본문, 양식 최대 폭 640 */
+  --wide-max: 72rem;        /* 두 칸 화면 전체 최대 폭 1152 */
+
+  /* ===== 간격 (4px 단위) ===== */
+  --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem; --sp-4: 1rem;
+  --sp-5: 1.25rem; --sp-6: 1.5rem; --sp-8: 2rem; --sp-10: 2.5rem; --sp-12: 3rem; --sp-16: 4rem;
+
+  /* ===== 모서리 (작은 것일수록 작게) ===== */
+  --r-badge: 4px;
+  --r-control: 10px;   /* 버튼, 입력 칸 */
+  --r-card: 16px;
+  --r-sheet: 20px;     /* 바텀시트, 대화상자 */
+  --r-full: 999px;
+
+  /* ===== 그림자 (떠 있는 것에만) ===== */
+  --shadow-1: 0 1px 4px rgba(16, 24, 40, 0.06);
+  --shadow-2: 0 4px 16px rgba(16, 24, 40, 0.08);
+  --shadow-3: 0 12px 32px rgba(16, 24, 40, 0.12);
+
+  /* ===== 움직임 ===== */
+  --dur-fast: 150ms;
+  --dur: 250ms;
+  --dur-slow: 400ms;
+  --ease: cubic-bezier(0.35, 0, 0.35, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.15, 1);
+  --ease-exit: cubic-bezier(0.35, 0, 1, 1);
+
+  color-scheme: light;
+}
+
+/* ===== 다크 모드 ===== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418;
+    --surface: #1b1e24;
+    --surface-raised: #252930;
+    --fill-subtle: #252930;
+    --text-strong: #eef0f3;
+    --text: #c4cad3;
+    --text-muted: #8e97a4;
+    --icon-muted: #6b7380;
+    --text-disabled: #5d6571;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --focus: #7aa5ff;
+    --positive: #3ccf8e;  --positive-weak: #15302a;
+    --warning:  #f0a24a;  --warning-weak:  #33281a;
+    --critical: #ff6b74;  --critical-weak: #3a1f23;
+    --info:     #7aa5ff;  --info-weak:     #1d2840;
+    --accent: var(--accent-dark);
+    --on-accent: var(--on-accent-dark);
+    --second: color-mix(in oklch, var(--second-base) 70%, white);
+    --shadow-1: none; --shadow-2: none; --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+[data-theme="dark"] {
+  --bg: #121418;
+  --surface: #1b1e24;
+  --surface-raised: #252930;
+  --fill-subtle: #252930;
+  --text-strong: #eef0f3;
+  --text: #c4cad3;
+  --text-muted: #8e97a4;
+  --icon-muted: #6b7380;
+  --text-disabled: #5d6571;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --focus: #7aa5ff;
+  --positive: #3ccf8e;  --positive-weak: #15302a;
+  --warning:  #f0a24a;  --warning-weak:  #33281a;
+  --critical: #ff6b74;  --critical-weak: #3a1f23;
+  --info:     #7aa5ff;  --info-weak:     #1d2840;
+  --accent: var(--accent-dark);
+  --on-accent: var(--on-accent-dark);
+  --second: color-mix(in oklch, var(--second-base) 70%, white);
+  --shadow-1: none; --shadow-2: none; --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+
+/* ===== 자동 계산 (건드리지 않음) =====
+   :root와 data-theme가 붙은 요소마다 다시 계산되도록 따로 둔다. */
+:root, [data-theme] {
+  --accent-press: color-mix(in oklch, var(--accent) 86%, black);
+  --accent-weak: color-mix(in oklch, var(--accent) 10%, var(--surface));
+  --accent-weak-press: color-mix(in oklch, var(--accent) 18%, var(--surface));
+  --accent-text: var(--accent-text-override, color-mix(in oklch, var(--accent) 88%, var(--text-strong))); /* 연한 바탕 위 강조 글자 */
+  --third-weak: color-mix(in oklch, var(--third) 22%, var(--surface));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --accent-press: color-mix(in oklch, var(--accent) 85%, white); }
+}
+[data-theme="dark"] { --accent-press: color-mix(in oklch, var(--accent) 85%, white); }
+
+/* 화면 일부만 다크일 때 그 영역의 바탕과 글자색 */
+[data-theme] { background: var(--bg); color: var(--text-strong); }
+:root[data-theme] { background: none; }
+
+/* ===== 다이얼: 촘촘 ===== */
+[data-density="compact"] {
+  --fs-caption: 0.75rem;    /* 12 */
+  --fs-small: 0.8125rem;    /* 13 */
+  --fs-body: 0.875rem;      /* 14 */
+  --fs-body-lg: 0.875rem;
+  --fs-title-s: 1rem;       /* 16 */
+  --fs-title: 1.125rem;     /* 18 */
+  --fs-title-l: 1.375rem;   /* 22 */
+  --lh-body: 1.45;
+  --fw-medium: 400;
+  --fw-bold: 600;           /* 굵기 2종: 400, 600 */
+  --row-h: 2.375rem;        /* 38 */
+  --btn-h: 2.25rem;         /* 36 */
+  --btn-h-s: 2rem;          /* 32 */
+  --field-h: 2.25rem;       /* 36 */
+  --page-x: 1rem;
+  --r-control: 7px;
+  --r-card: 10px;
+  --r-sheet: 14px;
+}
+
+/* ===== 다이얼: 브랜드 ===== */
+[data-personality="brand"] {
+  /* 제목 서체 하나를 따로 불러와 여기에 넣는다. 본문 글꼴은 바꾸지 않는다. */
+  --font-display: "Gowun Batang", serif;
+}
+/* 모서리 성격: 각지게 */
+[data-personality="brand"][data-corner="square"] {
+  --r-badge: 0; --r-control: 0; --r-card: 0; --r-sheet: 0;
+}
+/* 모서리 성격: 둥글게 */
+[data-personality="brand"][data-corner="round"] {
+  --r-control: 999px; --r-card: 24px; --r-sheet: 28px;
+}
+
+/* ===== 휴대폰과 태블릿 (references/responsive.md) =====
+   구간: 휴대폰 744px 미만, 태블릿 세로 744~1023px, 태블릿 가로 1024px 이상.
+   배치는 폭으로, 누르는 영역은 입력 장치(pointer)로 정한다.
+   <head>에 넣는다: <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> */
+@media (min-width: 744px) {
+  :root { --page-x: 1.5rem; }
+  [data-density="compact"] { --page-x: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  :root { --page-x: 2rem; }
+  [data-density="compact"] { --page-x: 1.5rem; }
+}
+/* 손가락으로 쓰는 기기: 누르는 영역 48, 촘촘 화면도 40~44로 */
+@media (pointer: coarse) {
+  :root { --touch: 3rem; }
+  [data-density="compact"] { --row-h: 2.75rem; --btn-h: 2.5rem; --btn-h-s: 2.5rem; --field-h: 2.5rem; }
+}
+
+/* ===== 기본 바탕 ===== */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }   /* 가로로 눕힌 아이폰이 글자를 키우지 않게 */
+img, video, canvas, iframe, svg { max-width: 100%; }               /* 그림이 화면 밖으로 넘치지 않게 */
+img, video { height: auto; }
+/* 일부러 만드는 가로 스크롤 (표, 가로 카드 목록, 칩 줄). 화면 전체는 움직이지 않고 이 칸만 움직인다 */
+.scroll-x {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--page-x);
+}
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--text-strong);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;           /* 한국어는 낱말 단위로 줄바꿈 */
+  overflow-wrap: anywhere;
+}
+h1, h2, h3 { font-family: var(--font-display); line-height: var(--lh-title); letter-spacing: var(--ls-title); margin: 0; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* 누르면 살짝 줄어듦 */
+.pressable { transition: transform var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease); }
+.pressable:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  .pressable:active { transform: none; }
+}
+
+/* =====================================================================
+   브라우저 기본 부품
+   스크롤바, 선택 상자(select)와 펼친 목록, 체크와 라디오, 슬라이더,
+   날짜 칸, 자동 완성 바탕, 글자 선택 색, 대화상자 뒤 막까지 테마를 따르게 한다.
+   이 블록이 없으면 다크 모드에서도 스크롤바와 펼친 목록이 하얗게 남는다.
+   HTML <head>에 아래 세 줄도 함께 넣는다 (CSS를 읽기 전 첫 화면과 휴대폰 주소창 색).
+     <meta name="color-scheme" content="light dark">
+     <meta name="theme-color" content="#f1f3f6" media="(prefers-color-scheme: light)">
+     <meta name="theme-color" content="#121418" media="(prefers-color-scheme: dark)">
+   ===================================================================== */
+:root, [data-theme] {
+  --scroll-thumb: color-mix(in oklch, var(--text-strong) 22%, transparent);
+  --scroll-thumb-hover: color-mix(in oklch, var(--text-strong) 38%, transparent);
+  --field-bg: var(--surface);
+  --field-line: var(--line-strong);
+  --menu-bg: var(--surface-raised);
+}
+
+/* 1. 스크롤바: 얇게, 투명한 길에 회색 손잡이 */
+html, [data-theme] {
+  scrollbar-color: var(--scroll-thumb) transparent;   /* Firefox, 최신 Chrome, Edge */
+}
+* { scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; }     /* 예전 Chrome, Safari */
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); background-clip: content-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+.scroll-stable { scrollbar-gutter: stable; }            /* 내용이 늘어도 화면이 옆으로 밀리지 않게 */
+
+/* 2. 체크, 라디오, 슬라이더, 진행 막대는 주색 */
+input[type="checkbox"], input[type="radio"], input[type="range"], progress, meter {
+  accent-color: var(--accent);
+}
+
+/* 3. 입력 칸과 선택 상자 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+select, textarea {
+  font: inherit;
+  color: var(--text-strong);
+  background-color: var(--field-bg);
+  border: 1px solid var(--field-line);
+  border-radius: var(--r-control);
+  min-height: var(--field-h);
+  padding: 0 var(--sp-3);
+}
+textarea { padding: var(--sp-3); min-height: 6rem; }
+/* 휴대폰에서 입력 칸 글자가 16px보다 작으면 아이폰이 누를 때마다 화면을 확대한다 */
+@media (max-width: 743px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  select, textarea { font-size: max(1rem, 16px); }
+}
+input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1; }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 0; border-color: transparent;
+}
+input:disabled, select:disabled, textarea:disabled { color: var(--text-disabled); background-color: var(--fill-subtle); }
+::selection { background: color-mix(in oklch, var(--accent) 24%, transparent); color: inherit; }
+input, textarea { caret-color: var(--accent); }
+
+/* 자동 완성 바탕(노란색, 파란색)을 테마 색으로 덮는다 */
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus,
+textarea:-webkit-autofill, select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-strong);
+  box-shadow: 0 0 0 1000px var(--field-bg) inset;
+  transition: background-color 9999s;
+}
+
+/* 선택 상자 화살표: 기본 화살표를 지우고 선 아이콘으로 */
+select {
+  appearance: none;
+  padding-right: calc(var(--sp-3) + 24px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23868f9c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--sp-3) center;
+  background-size: 18px 18px;
+  cursor: pointer;
+}
+select[multiple], select[size]:not([size="1"]) { background-image: none; padding-right: var(--sp-3); }
+/* 펼친 목록의 각 항목 (윈도우의 Chrome, Edge, Firefox는 이 색을 따른다) */
+select option, select optgroup { background-color: var(--menu-bg); color: var(--text-strong); }
+
+/* 펼친 목록 전체를 직접 꾸밀 수 있는 브라우저(Chrome 135 이상)에서는 목록 모양까지 맞춘다.
+   지원하지 않는 브라우저는 위 규칙만 적용되므로 그대로 둬도 된다. */
+@supports (appearance: base-select) {
+  select:not([multiple]) {
+    appearance: base-select;
+    background-image: none;
+    padding-right: var(--sp-3);
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+  }
+  select:not([multiple])::picker-icon {
+    content: ""; width: 18px; height: 18px; margin-left: auto;
+    background: var(--icon-muted);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate var(--dur-fast) var(--ease);
+  }
+  select:not([multiple]):open::picker-icon { rotate: 180deg; }
+  ::picker(select) {
+    appearance: base-select;
+    background: var(--menu-bg);
+    color: var(--text-strong);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow-2);
+    padding: var(--sp-1);
+    margin-block: var(--sp-1);
+    max-height: min(320px, 60vh);
+    overflow: auto;
+  }
+  select option {
+    min-height: 40px; padding: 0 var(--sp-3); border-radius: calc(var(--r-control) - 2px);
+    display: flex; align-items: center; gap: var(--sp-2);
+    background: transparent;
+  }
+  select option:hover, select option:focus-visible { background: var(--fill-subtle); outline: none; }
+  select option:checked { color: var(--accent-text); font-weight: var(--fw-semibold); background: var(--accent-weak); }
+  select option::checkmark { content: ""; display: none; }
+}
+
+/* 4. 그 밖의 기본 부품 */
+input[type="search"]::-webkit-search-cancel-button { filter: grayscale(1); opacity: .6; }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+::file-selector-button {
+  font: inherit; font-weight: var(--fw-semibold);
+  color: var(--text-strong); background: var(--fill-subtle);
+  border: 0; border-radius: calc(var(--r-control) - 2px);
+  padding: var(--sp-2) var(--sp-3); margin-right: var(--sp-3); cursor: pointer;
+}
+summary { cursor: pointer; }
+summary::marker { color: var(--icon-muted); }
+dialog { color: var(--text-strong); background: var(--surface-raised); border: 0; border-radius: var(--r-sheet); box-shadow: var(--shadow-3); }
+dialog::backdrop { background: rgba(16, 24, 40, .42); }
+hr { border: 0; border-top: 1px solid var(--line); }

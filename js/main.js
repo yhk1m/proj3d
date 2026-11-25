@@ -55,12 +55,12 @@ function mountViewTools(viewport, rig, { hidePivot, onHidePivot }) {
     box.appendChild(b);
     return b;
   };
-  const fitBtn = mk('시점 자동 맞춤 — 단계마다 광원·지구본·종이가 보이게 카메라를 맞춤 (드래그하면 해제)', ICONS.fit, () => rig.fit());
+  const fitBtn = mk('시점 자동 맞춤: 단계마다 광원, 지구본, 종이가 다 보이게 카메라를 맞춰요. 드래그하면 풀려요.', ICONS.fit, () => rig.fit());
   mk('확대', ICONS.plus, () => rig.zoom(0.8));
   mk('축소', ICONS.minus, () => rig.zoom(1.25));
   const lab = document.createElement('label');
   lab.className = 'vcheck';
-  lab.title = '회전 중심(빨간 점) 숨기기 — 지구본·종이를 더블클릭하면 그 지점이 회전 중심';
+  lab.title = '회전 중심(빨간 점) 숨기기. 지구본이나 종이를 더블클릭하면 그 지점이 회전 중심이 돼요.';
   const cb = document.createElement('input');
   cb.type = 'checkbox'; cb.checked = hidePivot;
   cb.addEventListener('change', () => onHidePivot(cb.checked));
@@ -70,7 +70,7 @@ function mountViewTools(viewport, rig, { hidePivot, onHidePivot }) {
   box.appendChild(lab);
   const hint = document.createElement('div');
   hint.className = 'vhint';
-  hint.textContent = '드래그 회전 · 휠 확대/축소 · 오른쪽 드래그 이동 · 더블클릭 회전 중심 이동 · 시점이 흐트러지면 왼쪽 위 맞춤 버튼';
+  hint.textContent = '드래그로 돌리고, 휠로 확대, 축소하고, 오른쪽 드래그로 옮겨요. 더블클릭하면 회전 중심이 옮겨지고, 시점이 흐트러지면 왼쪽 위 맞춤 버튼을 눌러요.';
   viewport.append(box, hint);
   return { fitBtn };
 }
@@ -121,7 +121,7 @@ async function main() {
   const pivot = new PivotMarker();
   scene.add(pivot.mesh);
   const PIVOT_KEY = 'proj3d.hidePivot';
-  let hidePivot = true;               // 기본은 숨김 — 사용자가 체크를 풀면('0') 보임
+  let hidePivot = true;               // 기본은 숨김, 사용자가 체크를 풀면('0') 보임
   try { hidePivot = localStorage.getItem(PIVOT_KEY) !== '0'; } catch (e) { /* 저장 불가 환경 */ }
   pivot.mesh.visible = !hidePivot;
   const rays = new Rays();

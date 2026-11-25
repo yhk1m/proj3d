@@ -53,9 +53,9 @@ export function createExportModal({ landTopo, getFrame, getTissot = () => false 
   const tissotInput = mk('tissot', '티소 지표');
   const note = el('p', 'modal-note');
   const actions = el('div', 'modal-actions');
-  const cancel = el('button', 'chip', '취소');
+  const cancel = el('button', 'chip', '닫기');
   cancel.type = 'button';
-  const save = el('button', 'chip on', '저장');
+  const save = el('button', 'chip chip-primary', 'PNG로 저장하기');
   save.type = 'button';
   actions.append(cancel, save);
   box.append(title, preview, optsBox, note, actions);
@@ -79,7 +79,7 @@ export function createExportModal({ landTopo, getFrame, getTissot = () => false 
     if (!vec) return;
     render(canvas, PREVIEW_SIDE);
     const full = layoutFor(vec.bbox, LONG_SIDE);
-    note.textContent = `저장 크기 ${full.width} × ${full.height} px · 지도 밖은 투명 · 색은 #000000 · #ffffff 두 가지`;
+    note.textContent = `저장 크기 ${full.width} × ${full.height} px, 지도 밖은 투명, 색은 #000000과 #ffffff 두 가지예요.`;
   }
 
   save.addEventListener('click', () => {
@@ -110,7 +110,7 @@ export function createExportModal({ landTopo, getFrame, getTissot = () => false 
       save.disabled = !ok;
       backdrop.classList.add('open');
       if (ok) drawPreview();
-      else { vec = null; canvas.width = 0; canvas.height = 0; note.textContent = '이 단계에서는 그릴 지도가 없음'; }
+      else { vec = null; canvas.width = 0; canvas.height = 0; note.textContent = '이 단계에는 그릴 지도가 없어요.'; }
       save.focus();
     },
   };

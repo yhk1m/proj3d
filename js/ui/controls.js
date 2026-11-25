@@ -31,19 +31,19 @@ const ICON_INFO = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" s
 
 const TISSOT_INFO_HTML = `
   <h3>티소 지표 (Tissot's indicatrix)</h3>
-  <p>지구 위에 같은 크기의 작은 원(각반경 4°)을 30° 간격으로 그린 뒤, 지도에서 어떻게 변형되는지 보는 도구. 원 하나가 그 지점의 왜곡을 그대로 보여줌.</p>
+  <p>지구 위에 같은 크기의 작은 원(각반경 4°)을 30° 간격으로 그린 뒤, 지도에서 어떻게 변하는지 보는 도구예요. 원 하나가 그 지점의 왜곡을 그대로 보여 줘요.</p>
   <ul>
     <li><b>원이 그대로 원</b> → 모양(각) 보존 = 정각도법 (메르카토르, 평사, 람베르트 정각원추)</li>
     <li><b>타원이지만 넓이가 모두 같음</b> → 면적 보존 = 정적도법 (Equal Earth, 몰바이데, 알베르스)</li>
     <li><b>길쭉할수록</b> 각 왜곡이 큼, <b>클수록</b> 면적 과장이 큼 (메르카토르의 고위도)</li>
-    <li>정각이면서 정적인 평면 지도는 불가능 — 모든 도법은 무엇을 포기할지 고른 결과</li>
+    <li>정각이면서 정적인 평면 지도는 만들 수 없어요. 모든 도법은 무엇을 포기할지 고른 결과예요.</li>
   </ul>
-  <p class="pop-sub">원 위에 마우스를 올리면 나오는 값</p>
+  <p class="pop-sub">원 위에 마우스를 올리면 나오는 값이에요</p>
   <dl>
     <dt>h</dt><dd>경선 방향 축척</dd>
     <dt>k</dt><dd>위선 방향 축척</dd>
-    <dt>s</dt><dd>면적배율 — 1.00 이면 실제와 같은 넓이</dd>
-    <dt>ω</dt><dd>최대각왜곡 — 0° 이면 정각</dd>
+    <dt>s</dt><dd>면적배율: 1.00이면 실제와 같은 넓이</dd>
+    <dt>ω</dt><dd>최대각왜곡: 0°이면 정각</dd>
   </dl>`;
 
 let popover = null;
@@ -106,7 +106,7 @@ export function mountControls(container) {
 
     // 표준위선 / 광원
     if (type === 'cylinder' && !locks.has('phi0')) {
-      const sl = slider({ label: 'φ₀', title: '표준위선 φ₀ — 0° 접선, 그 외 할선(원통 반지름 cos φ₀)', min: 0, max: 80, step: 1, value: Math.round((s.params.phi0 || 0) / D), format: (v) => `${v}°${v === 0 ? ' 접선' : ' 할선'}`, onInput: (v) => setParam('phi0', v * D) });
+      const sl = slider({ label: 'φ₀', title: '표준위선 φ₀: 0°면 접선, 그 밖은 할선(원통 반지름 cos φ₀)', min: 0, max: 80, step: 1, value: Math.round((s.params.phi0 || 0) / D), format: (v) => `${v}°${v === 0 ? ' 접선' : ' 할선'}`, onInput: (v) => setParam('phi0', v * D) });
       box.appendChild(sl);
     }
     if (type === 'cone') {
@@ -115,10 +115,10 @@ export function mountControls(container) {
       if (e.secant) {
         // 교과서에서 표준위선 2개로 다루는 도법(람베르트 정각원추·알베르스)만 접선/할선 전환
         const tg = toggle({ label: secant ? '할선' : '접선', checked: secant, onChange: (on) => setParam('phi2', on ? Math.min(85, phi1 + 20) * D : null) });
-        tg.title = secant ? '할선 원뿔 — 표준위선 2개' : '접선 원뿔 — 표준위선 1개 (체크하면 할선)';
+        tg.title = secant ? '할선 원뿔: 표준위선 2개' : '접선 원뿔: 표준위선 1개 (체크하면 할선)';
         box.appendChild(tg);
       }
-      const s1 = slider({ label: secant ? 'φ₁' : 'φ₀', title: '표준위선 — 90° = 평면, 0° = 원통 (세 가전면은 한 가족)', min: 0, max: 90, step: 1, value: phi1, format: (v) => `${v}°`, onInput: (v) => {
+      const s1 = slider({ label: secant ? 'φ₁' : 'φ₀', title: '표준위선: 90°면 평면, 0°면 원통 (세 가전면은 한 가족)', min: 0, max: 90, step: 1, value: phi1, format: (v) => `${v}°`, onInput: (v) => {
         setParam('phi1', v * D);
         if (s.params.phi2 != null && s.params.phi2 / D < v + 1) setParam('phi2', Math.min(90, v + 1) * D);
       } });
@@ -130,7 +130,7 @@ export function mountControls(container) {
     }
     if (type === 'plane' && !locks.has('d')) {
       const d = s.params.d ?? 0;
-      const sl = slider({ label: '광원 d', title: '광원 위치 — 0 지구 중심(심사), 1 대척점(평사), ∞ 평행광(정사)', min: 0, max: 1, step: 0.01, value: d === Infinity ? 1 : d, format: (v) => (d === Infinity ? '∞ 정사' : v === 0 ? '0 심사' : v >= 0.995 ? '1 평사' : v.toFixed(2)), onInput: (v) => setParam('d', v) });
+      const sl = slider({ label: '광원 d', title: '광원 위치: 0은 지구 중심(심사), 1은 대척점(평사), ∞는 평행광(정사)', min: 0, max: 1, step: 0.01, value: d === Infinity ? 1 : d, format: (v) => (d === Infinity ? '∞ 정사' : v === 0 ? '0 심사' : v >= 0.995 ? '1 평사' : v.toFixed(2)), onInput: (v) => setParam('d', v) });
       if (d === Infinity) sl.input.disabled = true;
       const inf = el('button', 'chip' + (d === Infinity ? ' on' : ''), '무한대');
       inf.type = 'button';
@@ -159,7 +159,7 @@ export function mountControls(container) {
         .map((id) => ({ value: id, labelKo: PROJECTIONS[id].nameKo, badges: () => [propertyBadge(PROJECTIONS[id])] }));
       if (items.length) groups.push({ labelKo: g.labelKo, items });
     }
-    const dd = createDropdown({ groups, value: s.compare || null, title: '다른 도법의 외곽선·해안선을 반투명하게 겹쳐 보기', onChange: (v) => setState({ compare: v }) });
+    const dd = createDropdown({ groups, value: s.compare || null, title: '다른 도법의 외곽선과 해안선을 반투명하게 겹쳐 봐요', onChange: (v) => setState({ compare: v }) });
     cmp.appendChild(dd.el);
     box.appendChild(cmp);
 
@@ -185,7 +185,7 @@ export function mountUtilControls(container, { onExport } = {}) {
     box.appendChild(toggle({ label: '저사양', checked: s.lowPower, onChange: (v) => setState({ lowPower: v }), cls: 'ctl-minor' }));
     const full = el('button', 'chip' + (s.projector ? ' on' : ''), s.projector ? '전체화면 해제' : '전체화면');
     full.type = 'button';
-    full.title = '전체화면 (프로젝터용 큰 글씨·고대비)';
+    full.title = '전체화면으로 보기 (프로젝터용 큰 글씨)';
     full.addEventListener('click', () => {
       if (isFull()) { document.exitFullscreen && document.exitFullscreen().catch(() => {}); }
       else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
@@ -195,13 +195,13 @@ export function mountUtilControls(container, { onExport } = {}) {
     share.type = 'button';
     share.addEventListener('click', async () => {
       const url = location.origin + location.pathname + '?' + toQuery();
-      try { await navigator.clipboard.writeText(url); share.textContent = '복사됨'; setTimeout(() => (share.textContent = '링크 복사'), 1200); } catch { prompt('URL', url); }
+      try { await navigator.clipboard.writeText(url); share.textContent = '복사했어요'; setTimeout(() => (share.textContent = '링크 복사'), 1200); } catch { prompt('URL', url); }
     });
     box.appendChild(share);
     if (onExport) {
       const png = el('button', 'chip', 'PNG 저장');
       png.type = 'button';
-      png.title = '지금 종이에 그려진 지도를 투명 배경 PNG 로 저장';
+      png.title = '지금 종이에 그려진 지도를 투명 배경 PNG로 저장해요';
       png.addEventListener('click', onExport);
       box.appendChild(png);
     }

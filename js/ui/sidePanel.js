@@ -131,7 +131,7 @@ function drawLobes(canvas, fr) {
   GOODE_LOBES_DEG.north.forEach((l) => drawLobe(l, 1));
   GOODE_LOBES_DEG.south.forEach((l) => drawLobe(l, -1));
   ctx.fillStyle = 'rgba(169,182,204,0.9)';
-  ctx.fillText(step >= 2 ? '로브 6개와 중앙경선(점선) — 절개는 바다에서만' : step === 1 ? '점선 = 40°44′ 이음매' : '아래: 완성된 호몰로사인(구드) 도법의 로브 배치', 8, titleY);
+  ctx.fillText(step >= 2 ? '로브 6개와 중앙경선(점선), 절개는 바다에서만' : step === 1 ? '점선 = 40°44′ 이음매' : '아래: 완성된 호몰로사인(구드) 도법의 로브 배치', 8, titleY);
 }
 
 // ---------------------------------------------------------------------------
@@ -335,10 +335,10 @@ export function mountSidePanel(container) {
     const pb = propertyBadge(e); if (pb) chips.appendChild(pb);
     const lb = lightBadge(e);
     const dc = lb || el('span', 'chip-i', `조정 ← ${r.nameKo}`);
-    if (!lb) dc.title = `이 앱의 구성 — 빛으로 만들 수 있는 ${r.nameKo}에서 출발해 수학적 조정으로 이끌어 냄. 실제 고안 과정의 순서는 아님`;
+    if (!lb) dc.title = `이 앱의 구성, 빛으로 만들 수 있는 ${r.nameKo}에서 출발해 수학적 조정으로 이끌어 냄. 실제 고안 과정의 순서는 아님`;
     chips.appendChild(dc);
-    if (fr.stepInfo) stageTitle.textContent = `${STAGE_LABELS.adjust} — ${fr.stepInfo.titleKo}`;
-    else stageTitle.textContent = STAGE_LABELS[s.stage] + (s.stage !== 'flat' && s.stage !== 'adjust' ? ` — ${r.nameKo}` : '');
+    if (fr.stepInfo) stageTitle.textContent = `${STAGE_LABELS.adjust}: ${fr.stepInfo.titleKo}`;
+    else stageTitle.textContent = STAGE_LABELS[s.stage] + (s.stage !== 'flat' && s.stage !== 'adjust' ? `: ${r.nameKo}` : '');
     cap.textContent = caption();
     // 광원 설명: 빛 투영과 관련된 단계(조정 전)에만
     const ld = s.stage !== 'adjust' ? lightDescription() : null;
@@ -355,7 +355,7 @@ export function mountSidePanel(container) {
     const usageId = e.id;
     const usage = USAGE_NOTES[usageId];
     usageBox.style.display = usage ? '' : 'none';
-    if (usage) { usageTitle.textContent = `쓰이는 곳 — ${PROJECTIONS[usageId].nameKo}`; usageText.textContent = usage; }
+    if (usage) { usageTitle.textContent = `쓰이는 곳: ${PROJECTIONS[usageId].nameKo}`; usageText.textContent = usage; }
     const badgeText = fr.stepInfo && fr.stepInfo.badgeKo;
     badge.textContent = badgeText || '';
     badge.style.display = badgeText ? '' : 'none';
@@ -382,7 +382,7 @@ export function mountSidePanel(container) {
     else if (p === 'blend') {
       showPanel('blend', blend);
       const w = fr.stepInfo.morph ? s.t / 2 : 0.5;
-      blendW.textContent = `가중치 — 아이토프 ${(1 - w).toFixed(2)} : 등장방형 ${w.toFixed(2)}`;
+      blendW.textContent = `가중치: 아이토프 ${(1 - w).toFixed(2)} : 등장방형 ${w.toFixed(2)}`;
     }
     else if (p === 'areaRatio') { showPanel('areaRatio', areaRatio); if (api.onAreaRatioNeeded) api.onAreaRatioNeeded(); }
     else if (p === 'lobes') { showPanel('lobes', lobes); drawLobes(lobes, fr); }

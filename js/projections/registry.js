@@ -35,7 +35,7 @@ export const PROPERTY_LABELS = {
   equalArea: '정적',
   equidistant: '정거',
   compromise: '절충',
-  none: '—',
+  none: '-',
 };
 
 export const PROJECTIONS = {
@@ -62,7 +62,7 @@ export const PROJECTIONS = {
     params: { phi0: 0 }, domain: rect(-90, 90),
     forward: A.equirectangular, derivation: 'equirectFromCentral',
     formulaTex: 'x = \\lambda\\cos\\varphi_0,\\quad y = \\varphi',
-    captionKo: '위선 간격을 모두 같게 둔 도법. 경선 방향 거리가 정확(정거). 가장 단순해서 위성영상·데이터 지도의 기본 격자로 쓰임.',
+    captionKo: '위선 간격을 모두 같게 둔 도법. 경선 방향 거리가 정확(정거). 가장 단순해서 위성영상, 데이터 지도의 기본 격자로 쓰임.',
   },
   mercator: {
     id: 'mercator', nameKo: '메르카토르 도법', family: 'cylindrical', property: 'conformal',
@@ -70,7 +70,7 @@ export const PROJECTIONS = {
     params: { phi0: 0 }, domain: rect(-85, 85), lockParams: ['phi0'],
     forward: A.mercator, derivation: 'mercatorFromCentral',
     formulaTex: 'y = \\ln\\tan\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right)',
-    captionKo: '빛 투영이 아니라 수학적 조정으로 만든 정각도법. 가로가 늘어난 비율(sec φ)만큼 세로도 늘려 모양(각)을 지킴. 항해도·웹 지도의 표준.',
+    captionKo: '빛 투영이 아니라 수학적 조정으로 만든 정각도법. 가로가 늘어난 비율(sec φ)만큼 세로도 늘려 모양(각)을 지킴. 항해도, 웹 지도의 표준.',
   },
   miller: {
     id: 'miller', nameKo: '밀러 도법', family: 'cylindrical', property: 'compromise',
@@ -101,7 +101,7 @@ export const PROJECTIONS = {
     },
     forward: P.centralConic, derivation: null,
     formulaTex: '\\rho = \\cot\\varphi_0 - \\tan(\\varphi-\\varphi_0),\\quad \\theta = \\lambda\\sin\\varphi_0',
-    captionKo: '지구 중심의 빛이 원뿔에 그린 지도. 표준위선 φ₀ 를 90° 로 올리면 평면, 0° 로 내리면 원통 — 세 가전면은 한 가족.',
+    captionKo: '지구 중심의 빛이 원뿔에 그린 지도. 표준위선 φ₀ 를 90° 로 올리면 평면, 0° 로 내리면 원통, 세 가전면은 한 가족.',
   },
   equidistantConic: {
     id: 'equidistantConic', nameKo: '정거원추도법', family: 'conic', property: 'equidistant',
@@ -117,7 +117,7 @@ export const PROJECTIONS = {
     params: { phi1: 30 * D, phi2: 60 * D }, domain: rect(-60, 90), secant: true,
     forward: A.lambertConformalConic, derivation: 'lccFromCentral',
     formulaTex: '\\rho = F\\cot^{n}\\!\\left(\\tfrac{\\pi}{4}+\\tfrac{\\varphi}{2}\\right),\\quad \\theta = n\\lambda',
-    captionKo: '두 표준위선(30°, 60°)을 지나는 할선 원뿔 + 정각 조건. 중위도 국가의 항공도·기상도에 쓰임.',
+    captionKo: '두 표준위선(30°, 60°)을 지나는 할선 원뿔 + 정각 조건. 중위도 국가의 항공도, 기상도에 쓰임.',
   },
   albers: {
     id: 'albers', nameKo: '알베르스 정적원추도법', family: 'conic', property: 'equalArea',
@@ -125,7 +125,7 @@ export const PROJECTIONS = {
     params: { phi1: 30 * D, phi2: 60 * D }, domain: rect(-90, 90), secant: true,
     forward: A.albers, derivation: 'albersFromCentral',
     formulaTex: '\\rho = \\tfrac{\\sqrt{C-2n\\sin\\varphi}}{n},\\quad \\theta = n\\lambda',
-    captionKo: '두 표준위선(30°, 60°) 할선 원뿔 + 정적 조건. 미국·유럽처럼 동서로 긴 지역의 통계 지도에 쓰임.',
+    captionKo: '두 표준위선(30°, 60°) 할선 원뿔 + 정적 조건. 미국, 유럽처럼 동서로 긴 지역의 통계 지도에 쓰임.',
   },
 
   // ---------------- 3.1 가전면 계열 · 평면 ----------------
@@ -143,7 +143,7 @@ export const PROJECTIONS = {
     params: { d: 1 }, domain: perspectiveCap,
     forward: P.azimuthalPerspective, derivation: null,
     formulaTex: 'r = 2\\tan\\tfrac{c}{2}',
-    captionKo: '접점의 대척점에서 나온 빛이 접평면에 그린 지도. 빛 투영이면서도 정각. 극지방 지도·별자리 지도에 쓰임.',
+    captionKo: '접점의 대척점에서 나온 빛이 접평면에 그린 지도. 빛 투영이면서도 정각. 극지방 지도, 별자리 지도에 쓰임.',
   },
   orthographic: {
     id: 'orthographic', nameKo: '정사도법', family: 'azimuthal', property: 'none',
@@ -167,7 +167,7 @@ export const PROJECTIONS = {
     params: { d: 1 }, domain: cap(179.5), lockParams: ['d'],
     forward: A.lambertAzimuthalEA, derivation: 'lambertAzimuthalFromStereo',
     formulaTex: 'r = 2\\sin\\tfrac{c}{2}',
-    captionKo: '면적이 정확하도록 반지름을 조정한 방위도법. 대륙·반구 단위의 통계 지도에 쓰임.',
+    captionKo: '면적이 정확하도록 반지름을 조정한 방위도법. 대륙, 반구 단위의 통계 지도에 쓰임.',
   },
 
   // ---------------- 3.2 수학적 도법 ----------------
@@ -204,7 +204,7 @@ export const PROJECTIONS = {
     surface: null, light: null, params: {}, domain: rect(-90, 90),
     forward: A.equalEarth, derivation: 'equalEarthFromLambert', modern: true,
     formulaTex: '\\begin{gathered}\\sin\\theta = \\tfrac{\\sqrt3}{2}\\sin\\varphi\\\\[2pt] y = A_1\\theta + A_2\\theta^3 + A_3\\theta^7 + A_4\\theta^9\\end{gathered}',
-    captionKo: '2018년 샤브리치·예니·패터슨이 발표한 정적도법. 로빈슨에서 영감을 받았지만(로빈슨을 고친 것이 아님) 면적을 정확히 지킴. 퍼트닌시 P4′ 와 에케르트 IV 를 섞은 모양을 바탕으로 위선 간격을 다항식으로 정의 — 식이 단순해 계산이 빠름.',
+    captionKo: '2018년 샤브리치, 예니, 패터슨이 발표한 정적도법. 로빈슨에서 영감을 받았지만(로빈슨을 고친 것이 아님) 면적을 정확히 지킴. 퍼트닌시 P4′ 와 에케르트 IV 를 섞은 모양을 바탕으로 위선 간격을 다항식으로 정의, 식이 단순해 계산이 빠름.',
   },
   robinson: {
     id: 'robinson', nameKo: '로빈슨 도법', family: 'pseudocylindrical', property: 'compromise',
@@ -218,7 +218,7 @@ export const PROJECTIONS = {
     surface: null, light: null, params: { d: 1 }, domain: rect(-90, 90), defaultAspect: 'transverse',
     forward: A.winkelTripel, derivation: 'winkelFromBlend', modern: true,
     formulaTex: '\\begin{gathered}(x, y) = \\tfrac12\\left[\\,\\text{Aitoff}(\\lambda,\\varphi) + (\\lambda\\cos\\varphi_1,\\ \\varphi)\\,\\right]\\\\[2pt] \\varphi_1 = \\arccos\\tfrac{2}{\\pi} \\approx 50°28\'\\end{gathered}',
-    captionKo: '아이토프 도법과 등장방형 도법의 산술평균. "트리펠" = 면적·각·거리 세 왜곡을 모두 조금씩 줄였다는 뜻. 1998년부터 내셔널 지오그래픽 세계지도.',
+    captionKo: '아이토프 도법과 등장방형 도법의 산술평균. "트리펠" = 면적, 각, 거리 세 왜곡을 모두 조금씩 줄였다는 뜻. 1998년부터 내셔널 지오그래픽 세계지도.',
   },
   aitoff: {
     id: 'aitoff', nameKo: '아이토프 도법', family: 'modifiedAzimuthal', property: 'compromise', hidden: true,

@@ -253,10 +253,10 @@ export function caption() {
   const e = entry(), root = rootEntry(e);
   const plane = root.surface.type === 'plane';
   switch (state.stage) {
-    case 'flat': return `펼쳐진 종이가 지구본 옆에 놓인 상태 — ${root.nameKo}의 ${surfaceLabel(root)} 종이`;
+    case 'flat': return `펼쳐진 종이가 지구본 옆에 놓인 상태, ${root.nameKo}의 ${surfaceLabel(root)} 종이`;
     case 'wrap': return plane
       ? '원판 종이를 접점에 붙이는 중. 평면은 굽힐 필요가 없는 가전면'
-      : '종이가 말리면서 지구본에 씌워지는 중. 종이는 늘어나지 않음 — 펼 수 있는 면(가전면)만 이렇게 씌울 수 있음';
+      : '종이가 말리면서 지구본에 씌워지는 중. 종이는 늘어나지 않음, 펼 수 있는 면(가전면)만 이렇게 씌울 수 있음';
     case 'project': return lightCaption(root) + (plane && state.t >= 0.85 ? ' 투영 끝, 종이는 이미 펼쳐진 상태' : '');
     case 'unroll': return `지도가 그려진 종이를 다시 펼치는 중. ${root.captionKo}`;
     case 'adjust': {
@@ -282,18 +282,18 @@ export function lightDescription() {
   if (light.type === 'axisOrthogonal') {
     return {
       kind: 'line',
-      titleKo: '선광원 — 지축 전체가 광원',
+      titleKo: '선광원: 지축 전체가 광원',
       textKo: '광원이 한 점이 아니라 지축(회전축) 전체. 축 위의 각 점에서 축에 수직인 방향(수평)으로만 빛이 나감. 위도 φ인 지점은 자기 높이 sin φ 에 있는 축 점의 빛을 받아 같은 높이로 원통에 찍힘 → y = sin φ. 위선 띠의 넓이가 그대로 보존되는 이유(아르키메데스). 전구 하나로는 만들 수 없는 수학적 광원.',
     };
   }
   const d = state.params.d;
   if (root.surface.type === 'plane') {
-    if (d === Infinity) return { kind: 'parallel', titleKo: '평행광 — 무한히 먼 광원', textKo: '태양빛처럼 무한히 먼 곳에서 오는 평행한 빛. 각 점을 접평면에 수직으로 떨어뜨린 그림자가 지도. 반구만 보임.' };
-    if (d >= 0.999) return { kind: 'point', titleKo: '점광원 — 접점의 대척점', textKo: '접점 반대편 지구 표면의 한 점에서 빛이 나옴. 지구 속을 지나 접평면에 닿는 광선. 원주각 정리로 각이 절반이 되어 정각(평사).' };
-    if (d <= 0.001) return { kind: 'point', titleKo: '점광원 — 지구 중심', textKo: '지구 중심 한 점에서 모든 방향으로 빛이 나감. 광원·구면의 점·종이의 점이 한 직선 위(공선). 대권이 직선으로 찍힘(심사).' };
-    return { kind: 'point', titleKo: `점광원 — 축 위 d = ${d.toFixed(2)}`, textKo: '접점 반대쪽 축 위의 한 점에서 나오는 빛. d = 0 이면 심사, 1 이면 평사, 무한대면 정사.' };
+    if (d === Infinity) return { kind: 'parallel', titleKo: '평행광: 무한히 먼 광원', textKo: '태양빛처럼 무한히 먼 곳에서 오는 평행한 빛. 각 점을 접평면에 수직으로 떨어뜨린 그림자가 지도. 반구만 보임.' };
+    if (d >= 0.999) return { kind: 'point', titleKo: '점광원: 접점의 대척점', textKo: '접점 반대편 지구 표면의 한 점에서 빛이 나옴. 지구 속을 지나 접평면에 닿는 광선. 원주각 정리로 각이 절반이 되어 정각(평사).' };
+    if (d <= 0.001) return { kind: 'point', titleKo: '점광원: 지구 중심', textKo: '지구 중심 한 점에서 모든 방향으로 빛이 나감. 광원, 구면의 점, 종이의 점이 한 직선 위(공선). 대권이 직선으로 찍힘(심사).' };
+    return { kind: 'point', titleKo: `점광원: 축 위 d = ${d.toFixed(2)}`, textKo: '접점 반대쪽 축 위의 한 점에서 나오는 빛. d = 0 이면 심사, 1 이면 평사, 무한대면 정사.' };
   }
-  return { kind: 'point', titleKo: '점광원 — 지구 중심(내핵)', textKo: '지구 중심 한 점에서 모든 방향으로 빛이 나감. 광원·구면의 점·종이의 점이 한 직선 위(공선). 위도가 높을수록 광선이 종이와 비스듬히 만나 멀리 찍힘 → 위선 간격이 tan 으로 벌어짐.' };
+  return { kind: 'point', titleKo: '점광원: 지구 중심(내핵)', textKo: '지구 중심 한 점에서 모든 방향으로 빛이 나감. 광원, 구면의 점, 종이의 점이 한 직선 위(공선). 위도가 높을수록 광선이 종이와 비스듬히 만나 멀리 찍힘 → 위선 간격이 tan 으로 벌어짐.' };
 }
 
 function lightCaption(root) {

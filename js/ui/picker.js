@@ -135,7 +135,7 @@ export function mountPicker(container) {
   }
   const legend = el('div', 'picker-legend');
   legend.append(
-    el('span', 'pbadge pbadge-light', '빛 투영'), el('span', null, '광원의 빛만으로 직접 만들 수 있는 도법. 나머지는 빛으로는 만들 수 없는 수학적 도법 — 이 앱에서는 빛 투영 결과에서 출발해 조정 단계로 이끌어 냄(실제 고안 순서와는 다를 수 있음)'),
+    el('span', 'pbadge pbadge-light', '빛 투영'), el('span', null, '광원의 빛만으로 직접 만들 수 있는 도법. 나머지는 빛으로는 만들 수 없는 수학적 도법, 이 앱에서는 빛 투영 결과에서 출발해 조정 단계로 이끌어 냄(실제 고안 순서와는 다를 수 있음)'),
   );
   menu.appendChild(legend);
 

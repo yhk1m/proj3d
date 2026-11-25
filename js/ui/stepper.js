@@ -21,16 +21,16 @@ export function mountStepper(container) {
   const bar = el('div', 'stepper');
   const stages = el('div', 'stages');
   const transport = el('div', 'transport');
-  const bPrev = el('button', 'tbtn'); bPrev.innerHTML = ICON.prev; bPrev.title = '이전 단계 (←)';
-  const bRew = el('button', 'tbtn'); bRew.innerHTML = ICON.rewind; bRew.title = '맨 처음으로 (펼친 종이)';
-  const bPlay = el('button', 'tbtn tbtn-play'); bPlay.innerHTML = ICON.play; bPlay.title = '재생/일시정지 (스페이스)';
-  const bNext = el('button', 'tbtn'); bNext.innerHTML = ICON.next; bNext.title = '다음 단계 (→)';
+  const bPrev = el('button', 'tbtn'); bPrev.innerHTML = ICON.prev; bPrev.title = '이전 단계 (←)'; bPrev.setAttribute('aria-label', '이전 단계');
+  const bRew = el('button', 'tbtn'); bRew.innerHTML = ICON.rewind; bRew.title = '맨 처음으로 (펼친 종이)'; bRew.setAttribute('aria-label', '맨 처음으로');
+  const bPlay = el('button', 'tbtn tbtn-play'); bPlay.innerHTML = ICON.play; bPlay.title = '재생, 일시정지 (스페이스)'; bPlay.setAttribute('aria-label', '재생, 일시정지');
+  const bNext = el('button', 'tbtn'); bNext.innerHTML = ICON.next; bNext.title = '다음 단계 (→)'; bNext.setAttribute('aria-label', '다음 단계');
   const scrub = el('input', 'scrub'); scrub.type = 'range'; scrub.min = 0; scrub.max = 1000; scrub.step = 1; scrub.value = 0;
   scrub.setAttribute('aria-label', '진행도');
   const tval = el('span', 'tval', '0%');
   const auto = el('label', 'ctl ctl-toggle ctl-auto');
   const autoInput = el('input'); autoInput.type = 'checkbox';
-  autoInput.title = '한 단계가 끝나면 다음 단계를 이어서 재생';
+  autoInput.title = '한 단계가 끝나면 다음 단계를 이어서 재생해요';
   autoInput.addEventListener('change', () => setState({ autoplay: autoInput.checked }));
   auto.append(autoInput, el('span', 'ctl-label', '자동 재생'));
   const utilSlot = el('span', 'util-slot');
@@ -83,7 +83,7 @@ export function mountStepper(container) {
     const v = Math.round(s.t * 1000);
     if (parseInt(scrub.value, 10) !== v) scrub.value = v;
     scrub.disabled = s.stage === 'flat';
-    tval.textContent = s.stage === 'flat' ? '—' : `${Math.round(s.t * 100)}%`;
+    tval.textContent = s.stage === 'flat' ? '' : `${Math.round(s.t * 100)}%`;
     // 아이콘은 상태가 바뀔 때만 교체한다. 재생 중 매 프레임 innerHTML 을 다시 쓰면 mousedown 으로 누른 SVG 가
     // mouseup 전에 사라져 브라우저가 click 을 버림 → 재생 중 일시정지 버튼이 먹지 않던 원인.
     const running = isRunning();                               // 자동 재생 대기 중에도 일시정지 아이콘

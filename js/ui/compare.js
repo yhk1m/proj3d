@@ -122,7 +122,7 @@ export class AreaRatio {
     const row = (name, val, on) => {
       const r = document.createElement('div'); r.className = 'sp-area-row' + (on ? ' on' : '');
       const n = document.createElement('span'); n.textContent = name;
-      const v = document.createElement('span'); v.className = 'sp-area-val'; v.textContent = Number.isFinite(val) ? `1 : ${val.toFixed(1)}` : '—';
+      const v = document.createElement('span'); v.className = 'sp-area-val'; v.textContent = Number.isFinite(val) ? `1 : ${val.toFixed(1)}` : '-';
       r.append(n, v);
       return r;
     };
