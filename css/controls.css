@@ -1,0 +1,236 @@
+/* © 2026 김용현 */
+/*
+  당토 디자인 공통 부품: 버튼, 체크, 라디오, 스위치, 세그먼트, 칩
+  ---------------------------------------------------------------
+  tokens.css 다음에 불러온다. 어느 프로젝트에서나 같은 부품이 같은 모양으로 보이게 하는 파일이라
+  이 부품들은 새로 그리지 말고 이 파일을 쓴다. 색은 모두 tokens.css 변수라 테마색과 다크 모드를 따른다.
+
+  치수와 상태의 출처: SEED Design(당근) @seed-design/css 3.4.1 레시피
+  checkmark, radiomark, switchmark, action-button, segmented-control, chip
+  (Apache-2.0, https://github.com/daangn/seed-design). 값만 옮기고 코드는 새로 짰다.
+  당토 규칙에 맞춰 바꾼 곳: 빈 체크와 라디오 테두리는 1.5px --icon-muted(대비 3:1),
+  꺼진 스위치 길도 --icon-muted, 모서리는 --r-control(브랜드 다이얼을 따른다).
+
+  쓰는 법
+  - 체크, 라디오: <input type="checkbox">, <input type="radio"> 그대로. 클래스 필요 없음
+  - 스위치: <input type="checkbox" role="switch">, 큰 것은 class="dt-switch-l"
+  - 버튼: <button class="dt-btn dt-btn--primary">, 크기 dt-btn--l, dt-btn--s, dt-btn--xs
+  - 세그먼트: <div class="dt-seg" role="radiogroup"><label><input type="radio" name="v" checked><span>목록</span></label>...</div>
+  - 칩: <button class="dt-chip" aria-pressed="false">, 또는 <label class="dt-chip"><input type="checkbox">...</label>
+*/
+
+:root {
+  --ctl-mark: 1.25rem;                    /* 체크, 라디오 20 (SEED medium) */
+  --ctl-mark-line: 1.5px;
+  --ctl-press: 0.92;
+  --ctl-sw-w: 38px; --ctl-sw-h: 24px; --ctl-sw-pad: 2px;   /* 스위치 24 (SEED size 24) */
+}
+@media (pointer: coarse) { :root { --ctl-mark: 1.5rem; } }  /* 손가락 기기는 24 (SEED large) */
+
+/* 회색 바탕 부품(회색 버튼, 칩, 세그먼트)은 반투명 회색이라 연회색 바탕과 흰 면 어디에 놓여도 보인다 (SEED neutral-weak-alpha) */
+:root { --ctl-weak: rgba(16, 24, 40, 0.06); --ctl-weak-press: rgba(16, 24, 40, 0.11); --ctl-on-critical: #ffffff; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --ctl-weak: rgba(255, 255, 255, 0.08); --ctl-weak-press: rgba(255, 255, 255, 0.14); --ctl-on-critical: #1f0608; }
+}
+:root[data-theme="dark"] { --ctl-weak: rgba(255, 255, 255, 0.08); --ctl-weak-press: rgba(255, 255, 255, 0.14); --ctl-on-critical: #1f0608; }
+
+/* ===== 체크 (SEED Checkbox, Square) ===== */
+input[type="checkbox"]:not([role="switch"]) {
+  appearance: none; -webkit-appearance: none;
+  position: relative; flex: none; margin: 0;
+  width: var(--ctl-mark); height: var(--ctl-mark);
+  border: var(--ctl-mark-line) solid var(--icon-muted);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer; vertical-align: middle;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease);
+}
+input[type="checkbox"]:not([role="switch"])::before {
+  content: ""; position: absolute; inset: 0;
+  background: var(--on-accent);
+  -webkit-mask: no-repeat center / 78% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+          mask: no-repeat center / 78% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  opacity: 0;
+}
+input[type="checkbox"]:not([role="switch"]):indeterminate::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+input[type="checkbox"]:not([role="switch"]):is(:checked, :indeterminate) { background: var(--accent); border-color: var(--accent); }
+input[type="checkbox"]:not([role="switch"]):is(:checked, :indeterminate)::before { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  input[type="checkbox"]:not([role="switch"]):not(:disabled):not(:checked):not(:indeterminate):hover { background: var(--ctl-weak); }
+}
+
+/* ===== 라디오 (SEED Radio) ===== */
+input[type="radio"] {
+  appearance: none; -webkit-appearance: none;
+  flex: none; margin: 0;
+  width: var(--ctl-mark); height: var(--ctl-mark);
+  border: var(--ctl-mark-line) solid var(--icon-muted);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer; vertical-align: middle;
+  transition: box-shadow var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease);
+}
+/* 고르면 주색 원 안에 지름 8(손가락 기기 10)짜리 점 */
+input[type="radio"]:checked {
+  border-color: var(--accent);
+  background: var(--on-accent);
+  box-shadow: inset 0 0 0 calc((var(--ctl-mark) - var(--ctl-mark) * 0.4) / 2 - var(--ctl-mark-line)) var(--accent);
+}
+@media (hover: hover) and (pointer: fine) {
+  input[type="radio"]:not(:disabled):not(:checked):hover { background: var(--ctl-weak); }
+}
+
+/* 체크, 라디오 공통: 누름, 초점, 비활성 */
+:is(input[type="checkbox"]:not([role="switch"]), input[type="radio"]):not(:disabled):active { scale: var(--ctl-press); }
+:is(input[type="checkbox"], input[type="radio"]):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+:is(input[type="checkbox"]:not([role="switch"]), input[type="radio"]):disabled {
+  cursor: not-allowed; border-color: var(--line-strong); background: var(--ctl-weak); box-shadow: none;
+}
+input[type="checkbox"]:not([role="switch"]):disabled::before { background: var(--text-disabled); }
+input[type="radio"]:disabled:checked { box-shadow: inset 0 0 0 calc((var(--ctl-mark) - var(--ctl-mark) * 0.4) / 2 - var(--ctl-mark-line)) var(--surface); background: var(--text-disabled); }
+
+/* ===== 스위치 (SEED Switch, size 24 / 32) ===== */
+input[type="checkbox"][role="switch"] {
+  appearance: none; -webkit-appearance: none;
+  position: relative; flex: none; margin: 0;
+  width: var(--ctl-sw-w); height: var(--ctl-sw-h);
+  border-radius: 999px;
+  background: var(--icon-muted);
+  cursor: pointer; vertical-align: middle;
+  transition: background-color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease);
+}
+input[type="checkbox"][role="switch"]::before {
+  content: ""; position: absolute;
+  top: var(--ctl-sw-pad); left: var(--ctl-sw-pad);
+  width: calc(var(--ctl-sw-h) - var(--ctl-sw-pad) * 2); height: calc(var(--ctl-sw-h) - var(--ctl-sw-pad) * 2);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .12);
+  transform: scale(0.8);
+  transition: transform var(--dur) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+input[type="checkbox"][role="switch"]:checked { background: var(--accent); }
+input[type="checkbox"][role="switch"]:checked::before {
+  background: var(--on-accent);   /* 밝은 주색(개나리, 먹 다크)에서도 손잡이가 보이게 */
+  transform: translateX(calc(var(--ctl-sw-w) - var(--ctl-sw-h))) scale(1);
+}
+input[type="checkbox"][role="switch"]:not(:disabled):active { scale: 0.96; }
+input[type="checkbox"][role="switch"]:disabled { opacity: .38; cursor: not-allowed; }
+input[type="checkbox"][role="switch"].dt-switch-l { --ctl-sw-w: 52px; --ctl-sw-h: 32px; --ctl-sw-pad: 3px; }
+
+/* ===== 버튼 (SEED Action Button) =====
+   크기: xs 32(알약 모양), s 36, 기본 40, l 52. 촘촘 다이얼에서는 --btn-h-s, --btn-h를 따라 작아진다.
+   종류: primary(주색 채움, 화면에 하나), brand-weak(연한 주색), neutral(진한 회색 채움),
+         weak(회색 바탕), outline(테두리), ghost(글자만), critical(되돌릴 수 없는 행동) */
+.dt-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1_5, 6px);
+  flex-shrink: 0; box-sizing: border-box;
+  height: var(--btn-h-s); padding: 0 1rem;
+  border: 0; border-radius: var(--r-control);
+  font: inherit; font-size: 0.875rem; font-weight: var(--fw-bold); line-height: 1.35;
+  white-space: nowrap; text-decoration: none; cursor: pointer;
+  color: var(--text-strong); background: var(--ctl-weak);
+  transition: background-color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+}
+.dt-btn svg { width: 1rem; height: 1rem; flex: none; }
+.dt-btn--l  { height: var(--btn-h); padding: 0 1.25rem; font-size: 1.125rem; }
+.dt-btn--l svg { width: 1.375rem; height: 1.375rem; }
+.dt-btn--s  { height: 2.25rem; padding: 0 0.875rem; }
+.dt-btn--xs { height: 2rem; padding: 0 0.875rem; font-size: 0.8125rem; border-radius: 999px; }
+[data-density="compact"] .dt-btn--s { height: 2rem; }
+.dt-btn--block { display: flex; width: 100%; }
+.dt-btn--icon { padding: 0; aspect-ratio: 1; }
+
+.dt-btn--primary    { color: var(--on-accent); background: var(--accent); }
+.dt-btn--brand-weak { color: var(--accent-text); background: var(--accent-weak); }
+.dt-btn--neutral    { color: var(--bg); background: var(--text-strong); }
+.dt-btn--weak       { color: var(--text-strong); background: var(--ctl-weak); }
+.dt-btn--outline    { color: var(--text-strong); background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.dt-btn--ghost      { color: var(--text); background: transparent; }
+.dt-btn--critical   { color: var(--ctl-on-critical); background: var(--critical); }   /* 다크에서는 밝아진 빨강 위에 어두운 글자 */
+
+@media (hover: hover) and (pointer: fine) {
+  .dt-btn:not(:disabled):hover { filter: brightness(0.96); }
+  .dt-btn--outline:not(:disabled):hover, .dt-btn--ghost:not(:disabled):hover { filter: none; background: var(--ctl-weak); }
+  .dt-btn--primary:not(:disabled):hover { filter: none; background: var(--accent-press); }
+}
+.dt-btn:not(:disabled):active { scale: 0.97; }
+.dt-btn--primary:not(:disabled):active { background: var(--accent-press); }
+.dt-btn--brand-weak:not(:disabled):active { background: var(--accent-weak-press); }
+.dt-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dt-btn:disabled, .dt-btn[aria-disabled="true"] {
+  cursor: not-allowed; color: var(--text-disabled); background: var(--ctl-weak); box-shadow: none; filter: none;
+}
+.dt-btn--ghost:disabled { background: transparent; }
+
+/* ===== 세그먼트 (SEED Segmented Control) =====
+   서로 배타적인 보기 2~4개. 고른 칸은 떠 있는 흰 면, 나머지는 흐린 굵은 글자. */
+.dt-seg {
+  display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  max-width: 100%; padding: 4px; gap: 0;
+  border-radius: 999px; background: var(--ctl-weak);
+}
+.dt-seg > label, .dt-seg > button {
+  position: relative;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 34px; min-width: 0; padding: 6px 1.25rem;
+  border: 0; border-radius: 999px; background: transparent;
+  font: inherit; font-size: var(--fs-body); font-weight: var(--fw-bold); line-height: 1.35;
+  color: var(--text-muted); white-space: nowrap; cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.dt-seg > label:has(input:checked), .dt-seg > button[aria-checked="true"], .dt-seg > button[aria-pressed="true"], .dt-seg > button[aria-selected="true"] {
+  color: var(--text-strong);
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(16, 24, 40, .06);
+}
+.dt-seg > label:has(input:focus-visible), .dt-seg > button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dt-seg > label:has(input:disabled), .dt-seg > button:disabled { color: var(--text-disabled); cursor: not-allowed; }
+[data-density="compact"] .dt-seg > label, [data-density="compact"] .dt-seg > button { min-height: 28px; padding: 4px 0.875rem; }
+
+/* ===== 칩 (SEED Chip, Solid) =====
+   필터와 여러 개 고르기. 고른 칩은 진한 회색 채움(주색이 아님: 주요 버튼과 헷갈리지 않게). 크기 32, 36(기본), 40. */
+.dt-chip {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  flex: none; box-sizing: border-box;
+  height: 36px; padding: 0 0.75rem;
+  border: 0; border-radius: 999px;
+  font: inherit; font-size: 0.875rem; font-weight: var(--fw-medium); line-height: 1.35;
+  color: var(--text-strong); background: var(--ctl-weak);
+  white-space: nowrap; cursor: pointer; user-select: none;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease);
+}
+.dt-chip--s { height: 32px; padding: 0 0.625rem; }
+.dt-chip--l { height: 40px; padding: 0 0.875rem; }
+.dt-chip svg { width: 1rem; height: 1rem; flex: none; }
+.dt-chip[aria-pressed="true"], .dt-chip[aria-checked="true"], .dt-chip:has(input:checked) {
+  color: var(--bg); background: var(--text-strong); font-weight: var(--fw-bold);
+}
+@media (hover: hover) and (pointer: fine) {
+  .dt-chip:not([aria-pressed="true"]):not(:has(input:checked)):hover { background: var(--ctl-weak-press); }
+}
+.dt-chip:active { scale: 0.96; }
+.dt-chip:focus-visible, .dt-chip:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dt-chip:disabled, .dt-chip:has(input:disabled) { color: var(--text-disabled); cursor: not-allowed; }
+
+/* 작은 버튼과 칩: 손가락 기기에서는 보이는 크기는 그대로 두고 누르는 영역만 44px 이상으로 넓힌다 (SEED 터치 영역 규칙) */
+.dt-btn { position: relative; }
+@media (pointer: coarse) {
+  .dt-btn--s::after, .dt-btn--xs::after, .dt-chip::after { content: ""; position: absolute; inset: -6px -2px; }
+}
+
+/* 세그먼트와 칩 안에 숨긴 입력: 위의 체크, 라디오 모양을 덮어 자리를 차지하지 않게 (같은 무게라 뒤에 와야 이긴다) */
+.dt-seg input[type], .dt-chip > input[type] {
+  appearance: none; -webkit-appearance: none;
+  position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; border: 0;
+  opacity: 0; pointer-events: none; box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type="checkbox"], input[type="checkbox"]::before, input[type="radio"], .dt-btn, .dt-seg > *, .dt-chip { transition: none; }
+  :is(input[type="checkbox"], input[type="radio"], .dt-btn, .dt-chip):active { scale: none; }
+}

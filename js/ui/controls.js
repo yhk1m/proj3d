@@ -96,12 +96,18 @@ export function mountControls(container) {
     // aspect
     const asp = el('div', 'ctl ctl-group');
     asp.append(el('span', 'ctl-label', '축'));
+    // 셋 중 하나만 고르는 보기라 세그먼트(당토 공통 부품 dt-seg)
+    const seg = el('div', 'dt-seg');
+    seg.setAttribute('role', 'group');
+    seg.setAttribute('aria-label', '축');
     for (const a of ['normal', 'transverse', 'oblique']) {
-      const b = el('button', 'chip' + (s.aspect === a ? ' on' : ''), ASPECT_LABELS[type][a]);
+      const b = el('button', null, ASPECT_LABELS[type][a]);
       b.type = 'button';
+      b.setAttribute('aria-pressed', String(s.aspect === a));
       b.addEventListener('click', () => setAspect(a));
-      asp.appendChild(b);
+      seg.appendChild(b);
     }
+    asp.appendChild(seg);
     box.appendChild(asp);
 
     // 표준위선 / 광원
@@ -134,6 +140,7 @@ export function mountControls(container) {
       if (d === Infinity) sl.input.disabled = true;
       const inf = el('button', 'chip' + (d === Infinity ? ' on' : ''), '무한대');
       inf.type = 'button';
+      inf.setAttribute('aria-pressed', String(d === Infinity));
       inf.addEventListener('click', () => setParam('d', d === Infinity ? 1 : Infinity));
       sl.appendChild(inf);
       box.appendChild(sl);
@@ -185,6 +192,7 @@ export function mountUtilControls(container, { onExport } = {}) {
     box.appendChild(toggle({ label: '저사양', checked: s.lowPower, onChange: (v) => setState({ lowPower: v }), cls: 'ctl-minor' }));
     const full = el('button', 'chip' + (s.projector ? ' on' : ''), s.projector ? '전체화면 해제' : '전체화면');
     full.type = 'button';
+    full.setAttribute('aria-pressed', String(!!s.projector));
     full.title = '전체화면으로 보기 (프로젝터용 큰 글씨)';
     full.addEventListener('click', () => {
       if (isFull()) { document.exitFullscreen && document.exitFullscreen().catch(() => {}); }

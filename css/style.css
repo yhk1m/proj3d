@@ -49,24 +49,31 @@ button, select, input { font-family: inherit; font-size: inherit; color: inherit
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
-/* ---- 공통 버튼 모양 ---- */
+/* ---- 공통 버튼 모양 ----
+   당토 공통 부품(controls.css)의 회색 버튼(dt-btn--weak)과 같은 값: 높이 40, 모서리 --r-control, 굵은 글자,
+   반투명 회색 바탕, 누르면 0.97로 작아짐. 3D 뷰 위 버튼(.vbtn, .vcheck, .side-toggle)은 반투명 네이비 바탕을 아래에서 따로 준다. */
 #topbar button, #stepper button, .vbtn, .vcheck, .side-toggle, .chip, .popover-close {
   min-height: var(--tool-h); height: var(--tool-h);
   border: 0; border-radius: var(--r-control);
-  background: var(--fill-subtle); color: var(--text-strong);
-  font-size: var(--fs-small); font-weight: var(--fw-medium);
+  background: var(--ctl-weak); color: var(--text-strong);
+  font-size: var(--fs-small); font-weight: var(--fw-bold);
   padding: 0 var(--sp-3);
   box-shadow: none;
-  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease);
 }
-@media (hover: hover) {
-  #topbar button:hover, #stepper button:hover, .vbtn:hover, .vcheck:hover, .side-toggle:hover, .chip:hover, .popover-close:hover { background: var(--fill-hover); }
+@media (hover: hover) and (pointer: fine) {
+  #topbar button:hover, #stepper button:hover, .chip:hover, .popover-close:hover { background: var(--ctl-weak-press); }
+  .vbtn:hover, .vcheck:hover, .side-toggle:hover { background: var(--fill-hover); }
 }
-/* 고른 것: 연한 노랑 바탕 + 노랑 글자. 채운 노랑은 재생 버튼 하나뿐 */
-#topbar button.on, #stepper .utils button.on, .chip.on, .vbtn.on {
-  background: var(--accent-weak-press); color: var(--accent-text); font-weight: var(--fw-semibold);
+#topbar button:not(:disabled):active, #stepper button:not(:disabled):active, .vbtn:active, .side-toggle:active, .chip:not(:disabled):active, .popover-close:active { scale: 0.97; }
+:is(#topbar, #stepper, #viewport, .popover, .modal) button:focus-visible, .vcheck:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* 켜고 끄는 버튼(무한대, 전체화면)이 켜진 것: 공통 칩처럼 진한 회색 채움. 채운 노랑은 재생 버튼 하나뿐 */
+.chip.on, #stepper .utils button.on, #topbar .drawer-utils button.on {
+  background: var(--text-strong); color: var(--bg); font-weight: var(--fw-bold);
 }
-.chip:disabled { opacity: 0.45; }
+/* 3D 뷰 위 시점 자동 맞춤 켜짐: 지도 위 아이콘 버튼이라 연한 노랑 그대로 */
+.vbtn.on { background: var(--accent-weak-press); color: var(--accent-text); }
+.chip:disabled, #topbar button:disabled, #stepper button:disabled { color: var(--text-disabled); background: var(--ctl-weak); }
 
 /* ---- 머리 막대 ---- */
 #topbar {
@@ -93,8 +100,9 @@ button:disabled { cursor: not-allowed; }
 .picker-group { color: var(--text-muted); font-size: var(--fs-caption); font-weight: var(--fw-semibold); padding: var(--sp-3) var(--sp-3) var(--sp-1); }
 #topbar .picker-item, .picker-item {
   display: flex; align-items: center; gap: var(--sp-2); width: 100%; height: auto; min-height: var(--tool-h); text-align: left; white-space: nowrap;
-  background: transparent; border: 0; border-radius: calc(var(--r-control) - 2px); padding: 0 var(--sp-3); color: var(--text-strong); font-size: var(--fs-small);
+  background: transparent; border: 0; border-radius: calc(var(--r-control) - 2px); padding: 0 var(--sp-3); color: var(--text-strong); font-size: var(--fs-small); font-weight: var(--fw-medium);
 }
+#topbar .picker-item:active { scale: none; }
 @media (hover: hover) { #topbar .picker-item:hover, .picker-item:hover { background: var(--fill-subtle); } }
 #topbar .picker-item.on, .picker-item.on { background: var(--accent-weak-press); color: var(--accent-text); font-weight: var(--fw-semibold); }
 .picker-item-name { flex: 1; }
@@ -116,11 +124,26 @@ button:disabled { cursor: not-allowed; }
 .ctl-slider input[type="range"] { width: 96px; }
 .ctl-hint { color: var(--text-muted); font-size: var(--fs-caption); }
 .ctl-toggle { cursor: pointer; }
-.ctl-toggle input { margin: 0; width: 16px; height: 16px; }
+.ctl-toggle input { margin: 0; }   /* 체크 모양과 크기(20, 손가락 기기 24)는 controls.css */
 .ctl-minor { opacity: 0.85; }
 .ctl-group { gap: var(--sp-1); }
 .ctl-group .ctl-label { margin-right: var(--sp-1); }
 .picker-compact .picker-btn { font-size: var(--fs-small); }
+/* 축(정축, 횡축, 사축) 세그먼트: controls.css .dt-seg 값. #topbar button 공통 모양보다 앞서도록 아이디를 붙인다 */
+#controls .ctl .dt-seg > button {
+  height: auto; min-height: 34px; padding: 6px var(--sp-4);
+  border-radius: 999px; background: transparent; color: var(--text-muted);
+  font-size: var(--fs-small); font-weight: var(--fw-bold); box-shadow: none;
+}
+@media (hover: hover) and (pointer: fine) { #controls .ctl .dt-seg > button:not([aria-pressed="true"]):hover { background: transparent; color: var(--text-strong); } }
+#controls .ctl .dt-seg > button:active { scale: none; }
+#controls .ctl .dt-seg > button[aria-pressed="true"] {
+  color: var(--text-strong); background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(16, 24, 40, .06);
+}
+/* 무한대: 켜고 끄는 칩. controls.css .dt-chip 값(높이 36, 알약) */
+#controls .ctl .chip { height: 36px; min-height: 36px; padding: 0 var(--sp-3); border-radius: 999px; font-weight: var(--fw-medium); }
+#controls .ctl .chip.on { font-weight: var(--fw-bold); }
 .picker-compact .picker-menu { max-height: 60vh; }
 
 /* ---- 햄버거, 패널 접기 (데스크톱 기본값) ---- */
@@ -219,7 +242,8 @@ body.projector .sp-texnote { font-size: 1rem; }
 .transport { display: flex; align-items: center; gap: var(--sp-2); flex: 1 1 auto; min-width: max-content; padding-left: var(--sp-5); border-left: 1px solid var(--line); }
 #stepper .tbtn { width: var(--tool-h); padding: 0; flex-shrink: 0; display: grid; place-items: center; }
 #stepper .tbtn-play { width: calc(var(--tool-h) + 8px); background: var(--accent); color: var(--on-accent); }
-@media (hover: hover) { #stepper .tbtn-play:hover { background: var(--accent-press); } }
+@media (hover: hover) and (pointer: fine) { #stepper .tbtn-play:hover { background: var(--accent-press); } }
+#stepper .tbtn-play:not(:disabled):active { background: var(--accent-press); }
 .scrub { flex: 1; min-width: 60px; height: 32px; margin: 0; }
 @media (pointer: coarse) { .scrub { height: var(--touch); } }
 .tval { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: var(--fs-caption); }
@@ -231,7 +255,7 @@ body.projector .sp-texnote { font-size: 1rem; }
 #viewtools { position: absolute; top: var(--sp-3); left: var(--sp-3); display: flex; gap: var(--sp-2); z-index: 5; }
 .vbtn { width: var(--tool-h); padding: 0; display: grid; place-items: center; background: color-mix(in oklch, var(--surface) 88%, transparent); }
 .vcheck { display: inline-flex; align-items: center; gap: var(--sp-2); cursor: pointer; user-select: none; white-space: nowrap; color: var(--text); background: color-mix(in oklch, var(--surface) 88%, transparent); }
-.vcheck input { margin: 0; width: 16px; height: 16px; }
+.vcheck input { margin: 0; }
 .vhint { position: absolute; left: var(--sp-3); bottom: var(--sp-3); font-size: var(--fs-caption); color: var(--text-muted); pointer-events: none; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
 
 /* ---- 설명 버튼, 팝오버 ---- */
@@ -284,8 +308,9 @@ body.projector .sp-texnote { font-size: 1rem; }
 .modal-note { margin: var(--sp-1) 0 var(--sp-4); color: var(--text-muted); font-size: var(--fs-caption); }
 .modal-actions { display: flex; justify-content: flex-end; gap: var(--sp-2); }
 .modal .chip { height: var(--btn-h-s); padding: 0 var(--sp-4); }
-.modal .chip.chip-primary { background: var(--accent); color: var(--on-accent); font-weight: var(--fw-semibold); }
-@media (hover: hover) { .modal .chip.chip-primary:hover { background: var(--accent-press); } }
+.modal .chip.chip-primary { background: var(--accent); color: var(--on-accent); font-weight: var(--fw-bold); }
+@media (hover: hover) and (pointer: fine) { .modal .chip.chip-primary:hover { background: var(--accent-press); } }
+.modal .chip.chip-primary:active { background: var(--accent-press); }
 
 /* ---- 툴팁 ---- */
 #tooltip {
@@ -326,8 +351,8 @@ body.projector { --text-muted: #d5deec; }
   #controls .controls { flex-wrap: wrap; overflow: visible; gap: var(--sp-2); padding: 0; align-items: center; }
   #controls .controls > .ctl { border: 0; border-radius: var(--r-card); background: var(--fill-subtle); padding: var(--sp-2) var(--sp-3); min-height: var(--touch); }
   #controls .controls > .ctl:first-child { padding-left: var(--sp-3); }
-  #controls .ctl .chip, #controls .ctl button { background: var(--surface-raised); }
-  #controls .ctl .chip.on { background: var(--accent-weak-press); }
+  #controls .ctl .chip, #controls .ctl button:not(.dt-seg > button) { background: var(--surface-raised); }
+  #controls .ctl .chip.on { background: var(--text-strong); color: var(--bg); }
   #controls .ctl-slider input[type="range"] { width: 130px; }
   .drawer-utils { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap; margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--line); }
   /* 본문: 3D 위, 설명 패널은 아래 시트 */
