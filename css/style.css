@@ -147,8 +147,8 @@ body.side-collapsed #side .side-panel { width: var(--side-w); }   /* 접히는 �
 
 /* ---- 설명 패널 ---- */
 .side-panel { padding: var(--sp-6) var(--sp-5) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); min-height: 100%; }
-.sp-copy { margin-top: auto; padding-top: var(--sp-4); font-size: var(--fs-caption); color: var(--text-muted); display: flex; align-items: center; gap: var(--sp-2); flex-wrap: nowrap; }
-.sp-copy-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-copy { margin-top: auto; padding-top: var(--sp-4); font-size: var(--fs-caption); color: var(--text-muted); display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; row-gap: 0; }
+.sp-copy-text { flex: 1 1 auto; min-width: 0; }
 .sp-copy a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; display: inline-block; padding: var(--sp-2) 0; }
 .sp-copy a:hover { color: var(--text-strong); }
 .sp-family { flex: 0 0 auto; }
