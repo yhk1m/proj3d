@@ -150,7 +150,7 @@ body.side-collapsed #side .side-panel { width: var(--side-w); }   /* 접히는 �
 .sp-copy { margin-top: auto; padding-top: var(--sp-4); font-size: var(--fs-caption); color: var(--text-muted); }
 .sp-copy a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; display: inline-block; padding: var(--sp-2) 0; }
 .sp-copy a:hover { color: var(--text-strong); }
-.sp-family { margin-left: var(--sp-2); }
+.sp-copy-text { margin-right: var(--sp-2); }
 .sp-family .bgnl-fam__btn, .sp-family .bgnl-fam__link { color: var(--text); text-decoration: none; }
 .sp-family .bgnl-fam__link:hover { color: var(--text-strong); }
 .sp-title { margin: 0; font-size: var(--fs-title-s); font-weight: var(--fw-bold); color: var(--text-strong); letter-spacing: var(--ls-title); }
