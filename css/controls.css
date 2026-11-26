@@ -28,11 +28,11 @@
 @media (pointer: coarse) { :root { --ctl-mark: 1.5rem; } }  /* 손가락 기기는 24 (SEED large) */
 
 /* 회색 바탕 부품(회색 버튼, 칩, 세그먼트)은 반투명 회색이라 연회색 바탕과 흰 면 어디에 놓여도 보인다 (SEED neutral-weak-alpha) */
-:root { --ctl-weak: rgba(16, 24, 40, 0.06); --ctl-weak-press: rgba(16, 24, 40, 0.11); --ctl-on-critical: #ffffff; }
+:root { --ctl-weak: rgba(16, 24, 40, 0.06); --ctl-weak-press: rgba(16, 24, 40, 0.11); --ctl-on-critical: #ffffff; --ctl-seg-on: var(--surface-raised); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --ctl-weak: rgba(255, 255, 255, 0.08); --ctl-weak-press: rgba(255, 255, 255, 0.14); --ctl-on-critical: #1f0608; }
+  :root:not([data-theme="light"]) { --ctl-weak: rgba(255, 255, 255, 0.08); --ctl-weak-press: rgba(255, 255, 255, 0.14); --ctl-on-critical: #1f0608; --ctl-seg-on: #3a3f48; }
 }
-:root[data-theme="dark"] { --ctl-weak: rgba(255, 255, 255, 0.08); --ctl-weak-press: rgba(255, 255, 255, 0.14); --ctl-on-critical: #1f0608; }
+:root[data-theme="dark"] { --ctl-weak: rgba(255, 255, 255, 0.08); --ctl-weak-press: rgba(255, 255, 255, 0.14); --ctl-on-critical: #1f0608; --ctl-seg-on: #3a3f48; }
 
 /* ===== 체크 (SEED Checkbox, Square) ===== */
 input[type="checkbox"]:not([role="switch"]) {
@@ -184,7 +184,7 @@ input[type="checkbox"][role="switch"].dt-switch-l { --ctl-sw-w: 52px; --ctl-sw-h
 }
 .dt-seg > label:has(input:checked), .dt-seg > button[aria-checked="true"], .dt-seg > button[aria-pressed="true"], .dt-seg > button[aria-selected="true"] {
   color: var(--text-strong);
-  background: var(--surface-raised);
+  background: var(--ctl-seg-on);   /* 다크에서는 회색 길보다 밝은 면이라야 떠 보인다 */
   box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(16, 24, 40, .06);
 }
 .dt-seg > label:has(input:focus-visible), .dt-seg > button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
